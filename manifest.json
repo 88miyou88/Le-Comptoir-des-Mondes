@@ -1,0 +1,19 @@
+{
+  "name": "Le Comptoir des Mondes",
+  "short_name": "Comptoir",
+  "description": "Jeu cosy de gestion, cuisine, exploration et collections.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fff8f0",
+  "theme_color": "#ff7f79",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

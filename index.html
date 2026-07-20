@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#ff7f79">
+  <meta name="description" content="Un jeu de gestion cosy, de cuisine, d'exploration et de collections.">
+  <title>Le Comptoir des Mondes</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-icon">🍲</span>
+        <div>
+          <strong>Le Comptoir des Mondes</strong>
+          <small id="versionLabel">V1.0</small>
+        </div>
+      </div>
+      <div class="currencies" aria-label="Ressources principales">
+        <button class="currency" data-open-tab="upgrades" title="Pièces"><span>🪙</span><b id="coinsValue">0</b></button>
+        <button class="currency" data-open-tab="objectives" title="Réputation"><span>⭐</span><b id="repValue">0</b></button>
+        <button class="currency" data-open-tab="settings" title="Diamants"><span>💎</span><b id="diamondsValue">0</b></button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section id="tab-counter" class="tab-panel active" data-tab-panel="counter">
+        <div class="goal-strip">
+          <div>
+            <small>Objectif actuel</small>
+            <strong id="activeGoalText">Servir un premier client</strong>
+          </div>
+          <div class="mini-progress"><span id="activeGoalProgress"></span></div>
+          <button id="goalShortcut" class="small-button" type="button">Voir</button>
+        </div>
+
+        <div class="world-card">
+          <div id="restaurantWorld" class="restaurant-world" aria-label="Salle du restaurant">
+            <div class="floor-pattern"></div>
+            <div class="station kitchen-station" data-station="kitchen"><span>🍳</span><small>Cuisine</small></div>
+            <div class="station storage-station" data-station="storage"><span>📦</span><small>Réserve</small></div>
+            <div class="station register-station" data-station="register"><span>🧾</span><small>Caisse</small></div>
+            <div class="decor plant-one">🌿</div>
+            <div class="decor plant-two">🪴</div>
+            <div id="customerLayer" class="customer-layer"></div>
+            <div id="player" class="player" aria-label="Votre personnage">
+              <span class="player-body">🧑‍🍳</span>
+              <span class="player-shadow"></span>
+            </div>
+            <div id="moveMarker" class="move-marker" hidden></div>
+          </div>
+          <div class="world-footer">
+            <div>
+              <span class="status-dot"></span>
+              <span id="worldStatus">Touchez le sol pour vous déplacer.</span>
+            </div>
+            <button id="contextAction" class="primary-button" type="button">Cuisine</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel-card">
+            <div class="panel-heading">
+              <h2>Clients</h2>
+              <span id="customerCountBadge" class="badge">0 en attente</span>
+            </div>
+            <div id="customerQueue" class="customer-queue empty-state">Les premiers clients arrivent bientôt.</div>
+          </article>
+
+          <article class="panel-card">
+            <div class="panel-heading">
+              <h2>Plateau prêt</h2>
+              <span id="trayCapacityLabel" class="badge">0/1</span>
+            </div>
+            <div id="readyTray" class="ready-tray empty-state">Aucun plat prêt.</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="tab-kitchen" class="tab-panel" data-tab-panel="kitchen">
+        <div class="section-header">
+          <div>
+            <h1>Cuisine</h1>
+            <p>Prépare des commandes et améliore ton organisation.</p>
+          </div>
+          <span id="kitchenSpeedLabel" class="badge">Vitesse normale</span>
+        </div>
+        <div id="cookingQueue" class="cooking-queue"></div>
+        <div id="recipeGrid" class="card-grid"></div>
+      </section>
+
+      <section id="tab-zones" class="tab-panel" data-tab-panel="zones">
+        <div class="section-header">
+          <div>
+            <h1>Zones</h1>
+            <p>Explore pour obtenir ingrédients, matériaux et objets rares.</p>
+          </div>
+          <span id="zoneProgressBadge" class="badge">1/4</span>
+        </div>
+        <div id="zoneGrid" class="zone-grid"></div>
+      </section>
+
+      <section id="tab-upgrades" class="tab-panel" data-tab-panel="upgrades">
+        <div class="section-header">
+          <div>
+            <h1>Améliorations</h1>
+            <p>Les améliorations modifient réellement le service, la cuisine ou la collecte.</p>
+          </div>
+          <div class="filter-row">
+            <button class="filter-chip active" data-upgrade-filter="all" type="button">Toutes</button>
+            <button class="filter-chip" data-upgrade-filter="service" type="button">Service</button>
+            <button class="filter-chip" data-upgrade-filter="kitchen" type="button">Cuisine</button>
+            <button class="filter-chip" data-upgrade-filter="automation" type="button">Auto</button>
+          </div>
+        </div>
+        <div id="upgradeGrid" class="card-grid"></div>
+      </section>
+
+      <section id="tab-collections" class="tab-panel" data-tab-panel="collections">
+        <div class="section-header">
+          <div>
+            <h1>Collections</h1>
+            <p>Chaque série complétée donne un bonus permanent.</p>
+          </div>
+          <span id="collectionProgressBadge" class="badge">0/25</span>
+        </div>
+        <div id="collectionList" class="collection-list"></div>
+      </section>
+
+      <section id="tab-minigame" class="tab-panel" data-tab-panel="minigame">
+        <div class="section-header">
+          <div>
+            <h1>Réserve pétillante</h1>
+            <p>Élimine des groupes identiques et termine les objectifs avant de manquer de coups.</p>
+          </div>
+          <span id="minigameLevelBadge" class="badge">Niveau 1</span>
+        </div>
+
+        <div class="minigame-layout">
+          <article class="panel-card minigame-info">
+            <div class="objective-box">
+              <small>Objectif</small>
+              <strong id="minigameObjective">Retirer toutes les bulles</strong>
+            </div>
+            <div class="mini-stats">
+              <div><small>Coups</small><b id="movesLeft">0</b></div>
+              <div><small>Score</small><b id="miniScore">0</b></div>
+              <div><small>Récompense</small><b id="miniReward">0 🪙</b></div>
+            </div>
+            <div id="miniObjectiveDetails" class="objective-details"></div>
+            <div class="button-row">
+              <button id="restartMini" class="secondary-button" type="button">Recommencer</button>
+              <button id="shuffleMini" class="secondary-button" type="button">Mélanger</button>
+            </div>
+            <p id="miniMessage" class="message" aria-live="polite">Clique sur un groupe d'au moins 2 cases identiques.</p>
+          </article>
+
+          <div class="board-wrap">
+            <div id="miniBoard" class="mini-board" role="grid" aria-label="Grille de mini-jeu 7 par 7"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-objectives" class="tab-panel" data-tab-panel="objectives">
+        <div class="section-header">
+          <div>
+            <h1>Objectifs</h1>
+            <p>Courts, moyens et longs : il y a toujours une prochaine carotte.</p>
+          </div>
+          <span id="objectiveProgressBadge" class="badge">0/40</span>
+        </div>
+        <div id="objectiveList" class="objective-list"></div>
+      </section>
+
+      <section id="tab-settings" class="tab-panel" data-tab-panel="settings">
+        <div class="section-header">
+          <div>
+            <h1>Paramètres</h1>
+            <p>Contrôles, sauvegarde et confort de jeu.</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <article class="panel-card">
+            <h2>Déplacement</h2>
+            <label class="setting-row">
+              <span><b>Mode de déplacement</b><small>Destination : un toucher suffit. Suivi : maintiens ou glisse le doigt.</small></span>
+              <select id="movementMode">
+                <option value="destination">Aller au point touché</option>
+                <option value="follow">Suivre le doigt</option>
+              </select>
+            </label>
+            <label class="setting-row switch-row">
+              <span><b>Marqueur de destination</b><small>Affiche brièvement l'endroit ciblé.</small></span>
+              <input id="showMoveMarker" type="checkbox" checked>
+            </label>
+          </article>
+
+          <article class="panel-card">
+            <h2>Confort</h2>
+            <label class="setting-row switch-row"><span><b>Sons</b><small>Petits sons d'interface.</small></span><input id="soundToggle" type="checkbox"></label>
+            <label class="setting-row switch-row"><span><b>Animations réduites</b><small>Réduit les mouvements décoratifs.</small></span><input id="reducedMotionToggle" type="checkbox"></label>
+            <label class="setting-row switch-row"><span><b>Vibrations</b><small>Retour tactile léger sur Android compatible.</small></span><input id="vibrationToggle" type="checkbox" checked></label>
+          </article>
+
+          <article class="panel-card">
+            <h2>Coffre gratuit</h2>
+            <p id="freeChestStatus">Disponible maintenant.</p>
+            <button id="claimFreeChest" class="primary-button wide" type="button">Ouvrir le coffre</button>
+          </article>
+
+          <article class="panel-card">
+            <h2>Sauvegarde</h2>
+            <p>La partie est sauvegardée automatiquement sur cet appareil. Exporte-la avant une grosse mise à jour.</p>
+            <div class="button-stack">
+              <button id="saveNow" class="secondary-button" type="button">Sauvegarder maintenant</button>
+              <button id="exportSave" class="secondary-button" type="button">Exporter la sauvegarde</button>
+              <label class="secondary-button file-button">Importer une sauvegarde<input id="importSave" type="file" accept="application/json"></label>
+              <button id="resetGame" class="danger-button" type="button">Réinitialiser la partie</button>
+            </div>
+            <small id="lastSavedLabel">Jamais sauvegardée</small>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navigation principale">
+      <button class="nav-button active" data-tab="counter" type="button"><span>🏠</span><small>Comptoir</small></button>
+      <button class="nav-button" data-tab="kitchen" type="button"><span>🍳</span><small>Cuisine</small></button>
+      <button class="nav-button" data-tab="zones" type="button"><span>🗺️</span><small>Zones</small></button>
+      <button class="nav-button" data-tab="upgrades" type="button"><span>🔧</span><small>Améliorer</small></button>
+      <button class="nav-button" data-tab="collections" type="button"><span>🧺</span><small>Collections</small></button>
+      <button class="nav-button" data-tab="minigame" type="button"><span>🫧</span><small>Bonus</small></button>
+      <button class="nav-button" data-tab="objectives" type="button"><span>🎯</span><small>Objectifs</small></button>
+      <button class="nav-button" data-tab="settings" type="button"><span>⚙️</span><small>Réglages</small></button>
+    </nav>
+  </div>
+
+  <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
+  <div id="modalLayer" class="modal-layer" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
