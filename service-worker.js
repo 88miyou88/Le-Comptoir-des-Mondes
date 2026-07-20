@@ -1,6 +1,6 @@
-const CACHE_NAME = 'comptoir-des-mondes-v3.0.0-build1';
+const CACHE_NAME = 'comptoir-des-mondes-v3.1.0-build1';
 const ASSETS = [
-  './', './index.html', './style.css?v=3.0.0-build1', './app.js?v=3.0.0-build1', './expansion.js?v=3.0.0-build1', './manifest.json', './assets/icon.svg',
+  './', './index.html', './style.css?v=3.1.0-build1', './app.js?v=3.1.0-build1', './expansion.js?v=3.1.0-build1', './manifest.json', './assets/icon.svg',
   './assets/regions/tavern_interior.png', './assets/player/idle_01.png', './assets/player/walk_01.png', './assets/player/carry_01.png',
   './assets/clients/client_red_haired_01.png', './assets/clients/client_red_haired_02.png', './assets/clients/client_red_haired_03.png',
   './assets/clients/client_cat_01.png', './assets/clients/client_cat_02.png', './assets/clients/client_cat_03.png',
@@ -10,6 +10,7 @@ const ASSETS = [
   './assets/clients/seated/cat_back_left.png', './assets/clients/seated/cat_back_right.png', './assets/clients/seated/cat_front_left.png', './assets/clients/seated/cat_front_right.png',
   './assets/clients/seated/dwarf_back_left.png', './assets/clients/seated/dwarf_back_right.png', './assets/clients/seated/dwarf_front_left.png', './assets/clients/seated/dwarf_front_right.png',
   './assets/clients/seated/elder_back_left.png', './assets/clients/seated/elder_back_right.png', './assets/clients/seated/elder_front_left.png', './assets/clients/seated/elder_front_right.png',
+  './assets/furniture/chairs/chair_back_left.png', './assets/furniture/chairs/chair_back_right.png', './assets/furniture/chairs/chair_front_left.png', './assets/furniture/chairs/chair_front_right.png',
   './assets/furniture/service_counter.png', './assets/furniture/storage_chest.png', './assets/furniture/open_door.png', './assets/stations/prep_station.png',
   './assets/regions/forest.png', './assets/regions/market.png', './assets/stations/workbench.png', './assets/stations/craft_machine.png', './assets/stations/forge.png', './assets/stations/mill.png', './assets/stations/mix_station.png', './assets/stations/press.png',
   './assets/food/vegetables_bundle.png', './assets/food/fruits_basket.png', './assets/food/herbs_bunch.png',

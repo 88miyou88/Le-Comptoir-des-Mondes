@@ -19,6 +19,55 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* V3.1 — collecte jouable, marché et proportions de la salle */
+.tray-upgrade-shortcut { margin:8px 0; width:100%; }
+.gathering-hub { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:22px; }
+.gathering-card { min-height:132px; padding:14px; display:grid; grid-template-columns:82px 1fr auto; align-items:center; gap:12px; border:3px solid #8b5d36; border-radius:17px; background:linear-gradient(145deg,#fff1cb,#dfb978); color:#4e321f; box-shadow:0 6px 0 rgba(63,39,21,.2); cursor:pointer; text-align:left; }
+.gathering-card:hover { transform:translateY(-2px); }
+.gathering-card .gathering-icon { width:78px; height:78px; object-fit:contain; }
+.gathering-card span { display:grid; gap:3px; }
+.gathering-card small { color:#6e8a55; font-weight:900; text-transform:uppercase; }
+.gathering-card b { font-size:19px; }
+.gathering-card em { color:#6d5038; font-style:normal; }
+.gathering-card > strong { padding:7px 10px; border-radius:9px; background:#486d5c; color:#fff4d0; }
+.market-title { margin-top:10px; }
+.ingredient-market { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:9px; }
+.market-good { padding:9px 10px; display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:8px; border:2px solid #a77446; border-radius:12px; background:#fff3d7; color:#4b3322; text-align:left; cursor:pointer; }
+.market-good:disabled { opacity:.5; cursor:not-allowed; }
+.market-good-icon { width:42px; height:42px; object-fit:contain; }
+.market-good span { display:grid; }
+.market-good small { color:#806044; }
+.gathering-stage { width:min(100%,700px); margin:0 auto 20px; padding:14px; border:4px solid #79502f; border-radius:18px; background:linear-gradient(#f7dfab,#c7975c); box-shadow:0 7px 0 rgba(61,38,21,.24); }
+.gathering-stage:not([hidden]) + .market-title { display:none; }
+.gather-game-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.gather-game-head > div { display:grid; }
+.gather-game-head b { font-size:19px; }
+.timber-game { position:relative; width:min(100%,390px); height:390px; margin:auto; overflow:hidden; border-radius:16px; background:linear-gradient(#9ac692,#5b8a50 70%,#416e3e); }
+.timber-row { position:absolute; left:50%; width:120px; height:38px; transform:translateX(-50%); }
+.timber-row i { position:absolute; left:45px; width:30px; height:42px; border:3px solid #5d351d; background:#9a5a2e; }
+.timber-row span { position:absolute; top:7px; width:72px; height:16px; border:3px solid #5d351d; border-radius:50% 20%; background:#7f4c28; }
+.timber-row.left span { right:67px; transform:rotate(-8deg); }
+.timber-row.right span { left:67px; transform:rotate(8deg); }
+.timber-player { position:absolute; bottom:7px; width:70px; height:90px; object-fit:contain; filter:drop-shadow(0 4px rgba(0,0,0,.25)); transition:left .12s ease; }
+.timber-player.left { left:20%; transform:scaleX(-1); }
+.timber-player.right { left:62%; }
+.timber-controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.timber-controls button { min-height:54px; border:3px solid #654023; border-radius:12px; background:#486d5c; color:#fff3d0; font-weight:900; cursor:pointer; }
+.dig-grid,.detector-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; width:min(100%,520px); margin:auto; }
+.dig-cell,.detector-cell { aspect-ratio:1; border:3px solid #704629; border-radius:11px; background:#845936; color:#fff2c8; font-size:22px; font-weight:900; cursor:pointer; box-shadow:inset 0 -5px rgba(47,28,16,.25); }
+.dig-cell.revealed { background:#d5b276; color:#4d321f; }
+.dig-icon { width:65%; height:65%; object-fit:contain; }
+.detector-cell.cold { background:#6d8290; }.detector-cell.warm { background:#d2923f; }.detector-cell.hot { background:#c95b3e; }.detector-cell.found { background:#e9c456; }
+.gather-result { min-height:280px; display:grid; place-content:center; justify-items:center; gap:12px; text-align:center; }
+.gather-result h3 { font-size:28px; margin:0; }
+@media(max-width:700px){
+  .gathering-hub { grid-template-columns:1fr; }
+  .gathering-card { grid-template-columns:64px 1fr; }
+  .gathering-card .gathering-icon { width:60px; height:60px; }
+  .gathering-card > strong { grid-column:1/-1; text-align:center; }
+  .timber-game { height:330px; }
+}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: Inter, ui-rounded, "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 body { overscroll-behavior: none; }
@@ -1025,16 +1074,17 @@ img { image-rendering: pixelated; }
 /* V3.0 — atelier visuel, salles fixes et clients réellement assis */
 .fixed-room-label { align-self:center; padding:5px 9px; border:1px solid #c79b66; border-radius:999px; background:rgba(255,244,215,.82); color:#6b472c; font-size:11px; font-weight:800; }
 .fixed-furniture { cursor:default !important; pointer-events:none; }
-.fixed-furniture.chair { z-index:30 !important; }
+.fixed-furniture.chair { z-index:30 !important; transform:translate(-50%,-58%); }
+.fixed-furniture.chair img { width:52px !important; height:80px !important; object-fit:contain; }
 .fixed-furniture.rug_green,.fixed-furniture.rug_red { z-index:7 !important; }
 .customer-avatar { transition:none; }
 .customer-avatar.walking { pointer-events:auto; transform:translate(-50%,-78%) !important; }
 .customer-avatar.walking .customer-sprite { animation:clientWalkBob 260ms steps(2,end) infinite alternate; }
 .customer-avatar.leaving .customer-order,.customer-avatar.leaving .patience-bar { display:none !important; }
-.customer-avatar.seated { width:112px !important; min-height:150px !important; transform:translate(-50%,-73%) !important; padding:0 !important; }
-.customer-avatar.seated::after { bottom:7px !important; width:48px !important; }
-.customer-avatar.seated .customer-sprite { width:92px !important; height:128px !important; margin:0 auto -23px !important; object-fit:contain; }
-.customer-avatar.seated .customer-order { position:relative; z-index:8; margin-top:-5px; }
+.customer-avatar.seated { width:108px !important; min-height:112px !important; transform:translate(-50%,-58%) !important; padding:0 !important; }
+.customer-avatar.seated::after { bottom:21px !important; width:36px !important; }
+.customer-avatar.seated .customer-sprite { width:52px !important; height:80px !important; margin:0 auto -8px !important; object-fit:contain; }
+.customer-avatar.seated .customer-order { position:relative; z-index:8; margin-top:0; }
 .customer-avatar.seated .patience-bar { position:relative; z-index:8; }
 @keyframes clientWalkBob { to { transform:translateY(-3px); } }
 
@@ -1047,7 +1097,7 @@ img { image-rendering: pixelated; }
 .machine-room-scene { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; filter:saturate(.72) brightness(.86); opacity:.92; }
 .machine-room-slots { position:absolute; inset:0; z-index:4; }
 .machine-slot { position:absolute; transform:translate(-50%,-50%); width:16%; min-height:23%; display:grid; place-items:center; text-align:center; }
-.machine-slot.future { border:2px dashed rgba(255,238,194,.38); border-radius:50%; color:rgba(255,242,204,.72); background:rgba(54,38,25,.16); pointer-events:none; }
+.machine-slot.future { display:none !important; }
 .machine-slot.future span { font-size:26px; line-height:1; }
 .machine-slot.future small { max-width:90px; font-size:9px; }
 .machine-body { width:100%; min-height:112px; padding:4px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; border:0; background:transparent; color:#fff1c7; cursor:pointer; }
@@ -1073,8 +1123,8 @@ img { image-rendering: pixelated; }
 
 @media (max-width:700px) {
   .fixed-room-label { display:none; }
-  .customer-avatar.seated { width:82px !important; min-height:116px !important; }
-  .customer-avatar.seated .customer-sprite { width:72px !important; height:100px !important; margin-bottom:-18px !important; }
+  .customer-avatar.seated { width:92px !important; min-height:102px !important; }
+  .customer-avatar.seated .customer-sprite { width:46px !important; height:71px !important; margin-bottom:-7px !important; }
   .atelier-next-goal { grid-template-columns:auto 1fr; }
   .atelier-next-goal > .badge { grid-column:1/-1; justify-self:start; }
   .machine-room-world { min-height:420px; aspect-ratio:1.05/1; }

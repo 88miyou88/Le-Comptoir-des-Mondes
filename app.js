@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '3.0.0';
-  const SAVE_VERSION = 3;
+  const GAME_VERSION = '3.1.0';
+  const SAVE_VERSION = 4;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
 
@@ -200,7 +200,9 @@
     client_red: 'assets/clients/client_red_haired_01.png', client_cat: 'assets/clients/client_cat_01.png', client_dwarf: 'assets/clients/client_dwarf_01.png', client_elder: 'assets/clients/client_elder_01.png', player_idle: 'assets/player/idle_01.png', player_walk: 'assets/player/walk_01.png', player_carry: 'assets/player/carry_01.png',
     zone_market: 'assets/regions/market.png', zone_forest: 'assets/regions/forest.png', zone_mine: 'assets/regions/mine.png', zone_sea: 'assets/regions/port_des_horizons.png',
     service_counter: 'assets/furniture/service_counter.png', workbench: 'assets/stations/workbench.png', craft_machine: 'assets/stations/craft_machine.png', storage_chest: 'assets/furniture/storage_chest.png', basket: 'assets/furniture/basket.png', chalkboard: 'assets/furniture/chalkboard_sign.png', gear: 'assets/resources/gear.png', sign: 'assets/building/hanging_sign.png', prep_station: 'assets/stations/prep_station.png', cutting_board: 'assets/stations/cutting_board.png', coffee_machine: 'assets/stations/coffee_machine.png', oven: 'assets/stations/oven.png', display_case: 'assets/stations/display_case.png', service_cart: 'assets/stations/service_cart.png', cash_register: 'assets/stations/cash_register.png', flowers: 'assets/furniture/potted_plant.png', shelf: 'assets/furniture/shelf.png', table_round: 'assets/furniture/table_round.png', chair: 'assets/furniture/chair.png',
-    clean_room: 'assets/regions/tavern_interior.png', door_closed: 'assets/furniture/closed_door.png'
+    clean_room: 'assets/regions/tavern_interior.png', door_closed: 'assets/furniture/closed_door.png',
+    chair_back_left: 'assets/furniture/chairs/chair_back_left.png', chair_back_right: 'assets/furniture/chairs/chair_back_right.png',
+    chair_front_left: 'assets/furniture/chairs/chair_front_left.png', chair_front_right: 'assets/furniture/chairs/chair_front_right.png'
   };
   const ITEM_ASSETS = {
     bread: 'bread', cheese: 'cheese', vegetables: 'vegetables', fruits: 'fruits', coffee: 'coffee', sugar: 'sugar', spices: 'spices',
@@ -251,18 +253,18 @@
     craft_station: { id: 'craft_station', name: 'Machine de craft', asset: 'craft_machine', radius: .07 }
   };
   const SERVICE_TABLE_SLOTS = [
-    { id: 'table-1', x: .38, y: .68 }, { id: 'table-2', x: .64, y: .68 },
-    { id: 'table-3', x: .47, y: .54 }, { id: 'table-4', x: .73, y: .55 }
+    { id: 'table-1', x: .36, y: .69 }, { id: 'table-2', x: .63, y: .69 },
+    { id: 'table-3', x: .45, y: .54 }, { id: 'table-4', x: .72, y: .54 }
   ];
   const SERVICE_SEAT_SLOTS = [
-    { id: 'seat-1', tableIndex: 0, x: .30, y: .69, orientation: 'front_right' },
-    { id: 'seat-2', tableIndex: 0, x: .47, y: .72, orientation: 'back_left' },
-    { id: 'seat-3', tableIndex: 1, x: .56, y: .69, orientation: 'front_right' },
-    { id: 'seat-4', tableIndex: 1, x: .73, y: .72, orientation: 'back_left' },
-    { id: 'seat-5', tableIndex: 2, x: .39, y: .55, orientation: 'front_right' },
-    { id: 'seat-6', tableIndex: 2, x: .56, y: .57, orientation: 'back_left' },
-    { id: 'seat-7', tableIndex: 3, x: .65, y: .55, orientation: 'front_right' },
-    { id: 'seat-8', tableIndex: 3, x: .82, y: .58, orientation: 'back_left' }
+    { id: 'seat-1', tableIndex: 0, x: .28, y: .63, orientation: 'back_right' },
+    { id: 'seat-2', tableIndex: 0, x: .44, y: .75, orientation: 'front_left' },
+    { id: 'seat-3', tableIndex: 1, x: .55, y: .63, orientation: 'back_right' },
+    { id: 'seat-4', tableIndex: 1, x: .71, y: .75, orientation: 'front_left' },
+    { id: 'seat-5', tableIndex: 2, x: .37, y: .48, orientation: 'back_right' },
+    { id: 'seat-6', tableIndex: 2, x: .53, y: .60, orientation: 'front_left' },
+    { id: 'seat-7', tableIndex: 3, x: .64, y: .48, orientation: 'back_right' },
+    { id: 'seat-8', tableIndex: 3, x: .80, y: .60, orientation: 'front_left' }
   ];
   const SERVICE_DECOR_SLOTS = [
     { furnitureId: 'shelf', x: .72, y: .45 }, { furnitureId: 'chest', x: .22, y: .75 },
@@ -304,7 +306,7 @@
       customers: [],
       nextCustomerAt: Date.now() + 2500,
       lastChestAt: 0,
-      player: { x: 0.5, y: 0.62 },
+      player: { x: 0.51, y: 0.83 },
       settings: { movementMode: 'destination', showMoveMarker: true, sound: false, reducedMotion: false, vibration: true },
       boosts: { serviceUntil: 0, kitchenUntil: 0, generousUntil: 0, luckyUntil: 0 },
       stats: {
@@ -391,6 +393,20 @@
     }
     merged.placedFurniture = [];
     merged.fixedServiceLayout = true;
+    if (Number(raw.saveVersion || 0) < 4 && Math.abs(Number(merged.player.x) - .5) < .02 && Math.abs(Number(merged.player.y) - .62) < .02) {
+      merged.player = { x: .51, y: .83 };
+    }
+    if (!raw.legacyStarsConverted) {
+      const stars = Math.max(0, Math.floor(Number(raw.reputation || 0)));
+      if (stars > 0) {
+        const coins = stars * 25;
+        const diamonds = Math.floor(stars / 50);
+        merged.coins += coins;
+        merged.diamonds += diamonds;
+        merged.legacyStarConversionNotice = { stars, coins, diamonds, shown: false };
+      }
+      merged.legacyStarsConverted = true;
+    }
     merged.saveVersion = SAVE_VERSION;
     merged.gameVersion = GAME_VERSION;
     return merged;
@@ -472,16 +488,16 @@
   function showTutorial(force = false) {
     if (!force && state.tutorialSeen) return;
     const html = `
-      <p>Le Comptoir est maintenant un domaine complet : cuisine, ferme, fabrication, équipe, boutique et exploration se répondent.</p>
+      <p>Le Comptoir est maintenant un domaine complet : collecte active, fabrication, cuisine, ferme et service se répondent.</p>
       <div class="tutorial-steps">
         <div class="tutorial-step"><div class="tutorial-num">1</div><div><b>Ferme la taverne pour préparer</b><small>Le bouton au-dessus de la salle permet d'ouvrir ou fermer la taverne. Fermée, aucun client n'arrive et rien ne presse.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Prépare ton stock</b><small>Utilise la cuisine ouverte sur la salle : les commandes restent visibles pendant la préparation.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">3</div><div><b>Ouvre quand tu es prête</b><small>Quand plusieurs plats sont prêts, ouvre la taverne. Les clients arrivent et demandent une recette précise.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">4</div><div><b>Déplace-toi et sers</b><small>Touche le sol pour déplacer ton personnage, puis touche un client pour lui apporter le plat correspondant.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Cultive la ferme</b><small>Achète des graines, plante les parcelles et récolte les ingrédients nécessaires à la cuisine et à la boutique.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Collecte en jouant</b><small>Le bois, la pierre, le minerai et le tissu viennent de mini-jeux qui gagnent en rendement avec ta maîtrise.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">6</div><div><b>Développe le domaine</b><small>La cour mène à la menuiserie, à la production, aux machines et aux technologies. Chaque meuble fabriqué rejoint l’agencement.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">7</div><div><b>Recrute sans perdre le contrôle</b><small>Les employés et robots automatisent seulement les tâches que tu choisis de leur confier.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">8</div><div><b>Explore et progresse</b><small>Visite les régions, complète les collections, ouvre une boutique et développe plusieurs établissements sans remise à zéro.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">8</div><div><b>Choisis ton prochain déblocage</b><small>Construis une machine, découvre une recette, améliore le stockage ou complète une collection, toujours sans remise à zéro.</small></div></div>
       </div>`;
     showModal('Bienvenue au Comptoir', html, [
       { label: 'J’ai compris', className: 'primary-button', action: () => { state.tutorialSeen = true; saveState(); } }
@@ -526,8 +542,8 @@
     const usableSeats = getUsableSeats().length;
     return {
       maxCustomers: Math.min(Math.max(1, usableSeats), 2 + (hasUpgrade(state, 'counter_2') ? 1 : 0) + (hasUpgrade(state, 'counter_3') ? 1 : 0) + (hasUpgrade(state, 'counter_4') ? 2 : 0)),
-      trayCapacity: 1 + (hasUpgrade(state, 'wood_tray') ? 1 : 0) + (hasUpgrade(state, 'strong_tray') ? 1 : 0) + (state.expansion?.tech?.includes('smart_storage') ? 2 : 0),
-      cookingSlots: 1 + (hasUpgrade(state, 'shelf') ? 1 : 0) + (state.expansion?.tech?.includes('smart_storage') ? 1 : 0),
+      trayCapacity: 3 + (hasUpgrade(state, 'wood_tray') ? 2 : 0) + (hasUpgrade(state, 'strong_tray') ? 3 : 0) + (state.expansion?.tech?.includes('smart_storage') ? 2 : 0),
+      cookingSlots: 2 + (hasUpgrade(state, 'shelf') ? 1 : 0) + (state.expansion?.tech?.includes('smart_storage') ? 1 : 0),
       prepMultiplier: (hasUpgrade(state, 'cutting_board') ? 0.9 : 1) * (hasCollection('utensils') ? 0.95 : 1) * (Date.now() < state.boosts.kitchenUntil ? 0.65 : 1) * (1 - Math.min(.2, ((state.expansion?.mastery?.kitchen?.level || 1) - 1) * .025)),
       coinMultiplier: (hasUpgrade(state, 'register') ? 1.08 : 1) * (Date.now() < state.boosts.generousUntil ? 1.2 : 1) * (1 + Math.min(.2, ((state.expansion?.mastery?.tavern?.level || 1) - 1) * .02)),
       repMultiplier: (hasUpgrade(state, 'counter_4') ? 1.05 : 1) * (hasCollection('souvenirs') ? 1.05 : 1),
@@ -589,10 +605,10 @@
     return seat;
   }
 
-  function standingClientPath(customer, now = Date.now()) {
+  function standingClientPath(customer) {
     const kind = CLIENT_VISUAL_KIND[customer.typeId] || 'red';
     const frames = CLIENT_STANDING_PATHS[kind];
-    return frames[Math.floor(now / 180) % frames.length];
+    return frames[0];
   }
 
   function seatedClientPath(customer, seat) {
@@ -611,7 +627,7 @@
 
   function renderHUD() {
     el('coinsValue').textContent = fmt(state.coins);
-    el('repValue').textContent = fmt(state.reputation);
+    if (el('repValue')) el('repValue').textContent = fmt(state.reputation);
     el('diamondsValue').textContent = fmt(state.diamonds);
     el('versionLabel').textContent = `V${GAME_VERSION}`;
   }
@@ -788,8 +804,8 @@
       node.style.left = `${item.x * 100}%`;
       node.style.top = `${item.y * 100}%`;
       node.style.zIndex = String(5 + Math.round(item.y * 100));
-      const mirrored = item.furnitureId === 'chair' && item.orientation?.endsWith('left') ? 'scaleX(-1)' : '';
-      node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}" style="transform:${mirrored}">`;
+      const chairAsset = item.furnitureId === 'chair' ? `chair_${item.orientation || 'front_right'}` : furn.asset;
+      node.innerHTML = `<img src="${assetPath(chairAsset)}" alt="${furn.name}">`;
       layer.appendChild(node);
     });
     grid.hidden = true;
@@ -1079,13 +1095,13 @@
   }
 
   function unlockRecipeText(recipe) {
-    if (recipe.id === 'salad') return 'Atteins 30 réputation.';
+    if (recipe.id === 'salad') return 'Disponible dès le départ.';
     if (recipe.id === 'fruit_tart') return 'Construis le petit four.';
-    if (recipe.id === 'forest_soup') return 'Débloque la Forêt Gourmande.';
-    if (recipe.id === 'spicy_skewer') return 'Atteins 150 réputation.';
-    if (recipe.id === 'grilled_fish') return 'Débloque le Bord de Mer.';
+    if (recipe.id === 'forest_soup') return 'Construis la scierie.';
+    if (recipe.id === 'spicy_skewer') return 'Construis la scierie.';
+    if (recipe.id === 'grilled_fish') return 'Construis la forge.';
     if (recipe.id === 'display_dessert') return 'Construis la vitrine réfrigérée.';
-    if (recipe.id === 'counter_menu') return 'Atteins 420 réputation.';
+    if (recipe.id === 'counter_menu') return 'Construis le moulin.';
     return 'Continue ta progression.';
   }
 
@@ -1243,8 +1259,10 @@
   }
 
   function renderZones() {
-    el('zoneProgressBadge').textContent = `${state.unlockedZones.length}/${ZONES.length}`;
+    if (window.ComptoirExpansion?.renderGathering) return window.ComptoirExpansion.renderGathering();
+    if (el('zoneProgressBadge')) el('zoneProgressBadge').textContent = `${state.unlockedZones.length}/${ZONES.length}`;
     const grid = el('zoneGrid');
+    if (!grid) return;
     grid.innerHTML = ZONES.map(zone => {
       const unlocked = state.unlockedZones.includes(zone.id);
       const costOk = canPay(zone.unlockCost.coins || 0, Object.fromEntries(Object.entries(zone.unlockCost).filter(([k]) => k !== 'coins')));
@@ -1827,7 +1845,7 @@
   function checkMiniEnd() {
     if (miniObjectiveComplete()) {
       mini.won = true;
-      const reward = { coins: mini.reward };
+      const reward = { coins: mini.reward, fabric: Math.max(2, Math.ceil(mini.level / 3)) };
       if (mini.level % 5 === 0) reward.diamonds = 1;
       const bonusItems = state.unlockedZones.includes('mine') ? ['wood', 'stone', 'metal', 'glass'] : ['bread', 'vegetables', 'fruits', 'wood'];
       reward[choice(bonusItems)] = randomInt(1, 3);
@@ -2021,6 +2039,12 @@
 
   attachEvents();
   renderAll();
+  if (state.legacyStarConversionNotice && !state.legacyStarConversionNotice.shown) {
+    const conversion = state.legacyStarConversionNotice;
+    conversion.shown = true;
+    saveState();
+    setTimeout(() => showModal('Tes anciennes étoiles sont conservées', `<p>${fmt(conversion.stars)} étoiles ont été converties en ressources utiles.</p><div class="reward-row"><span class="resource-chip">🪙 ${fmt(conversion.coins)}</span>${conversion.diamonds ? `<span class="resource-chip">💎 ${fmt(conversion.diamonds)}</span>` : ''}</div>`, [{ label: 'Récupérer', className: 'primary-button' }]), 350);
+  }
   registerServiceWorker();
   setInterval(() => saveState(), 8000);
   if (!state.tutorialSeen) setTimeout(() => showTutorial(false), 250);

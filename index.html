@@ -8,7 +8,7 @@
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=3.0.0-build1">
+  <link rel="stylesheet" href="style.css?v=3.1.0-build1">
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -17,12 +17,11 @@
         <img class="brand-logo" src="assets/icon.svg" alt="Le Comptoir des Mondes">
         <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small><span id="versionLabel">V3.0.0</span> · L’atelier vivant</small>
+          <small><span id="versionLabel">V3.1.0</span> · L’atelier vivant</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
         <button class="currency" data-open-tab="upgrades" title="Pièces"><span>🪙</span><b id="coinsValue">0</b></button>
-        <button class="currency" data-open-tab="objectives" title="Réputation"><span>⭐</span><b id="repValue">0</b></button>
         <button class="currency" data-open-tab="settings" title="Diamants"><span>💎</span><b id="diamondsValue">0</b></button>
       </div>
     </header>
@@ -87,9 +86,9 @@
           <article class="panel-card">
             <div class="panel-heading">
               <h2>Stock prêt</h2>
-              <span id="trayCapacityLabel" class="badge">0/1</span>
+              <span id="trayCapacityLabel" class="badge">0/3</span>
             </div>
-            <small id="traySummary" class="tray-summary-text">Capacité de plats prêts : 0/1</small><div id="readyTray" class="ready-tray empty-state">Aucun plat prêt.</div>
+            <small id="traySummary" class="tray-summary-text">Capacité de plats prêts : 0/3</small><button class="secondary-button tray-upgrade-shortcut" data-open-tab="upgrades" type="button">Améliorer le stockage</button><div id="readyTray" class="ready-tray empty-state">Aucun plat prêt.</div>
           </article>
         </div>
       </section>
@@ -111,12 +110,15 @@
       <section id="tab-zones" class="tab-panel" data-tab-panel="zones">
         <div class="section-header">
           <div>
-            <h1>Régions & fournisseurs</h1>
-            <p>Visite les fournisseurs, collecte sur place et développe chaque région.</p>
+            <h1>Collecte & marché</h1>
+            <p>Gagne les matériaux de base en jouant, puis achète les ingrédients qui te manquent.</p>
           </div>
-          <span id="zoneProgressBadge" class="badge">1/4</span>
+          <span class="badge">Sans attente</span>
         </div>
-        <div id="zoneGrid" class="zone-grid"></div>
+        <div id="gatheringHub" class="gathering-hub"></div>
+        <div id="gatheringStage" class="gathering-stage" hidden></div>
+        <h2 class="market-title">Marché aux ingrédients</h2>
+        <div id="ingredientMarket" class="ingredient-market"></div>
       </section>
 
       <section id="tab-farm" class="tab-panel" data-tab-panel="farm">
@@ -151,7 +153,7 @@
         <div class="hub-link-grid">
           <button class="hub-link" data-open-tab="upgrades" type="button"><img src="assets/stations/oven.png" alt=""><span><b>Améliorations</b><small>Service, cuisine et automatisation</small></span></button>
           <button class="hub-link" data-open-tab="staff" type="button"><img src="assets/npcs/tavern_worker_female_01.png" alt=""><span><b>Équipe</b><small>Recruter et affecter les employés</small></span></button>
-          <button class="hub-link" data-open-tab="shop" type="button"><img src="assets/stations/display_case.png" alt=""><span><b>Boutique</b><small>Produits emballés et souvenirs</small></span></button>
+          <button class="hub-link" data-open-tab="zones" type="button"><img src="assets/resources/wood_log.png" alt=""><span><b>Collecte & marché</b><small>Mini-jeux de ressources et ingrédients</small></span></button>
           <button class="hub-link" data-open-tab="progress" type="button"><img src="assets/building/hanging_sign.png" alt=""><span><b>Domaine</b><small>Niveaux, établissements et statistiques</small></span></button>
         </div>
       </section>
@@ -183,13 +185,6 @@
         <div id="staffGrid" class="staff-grid"></div>
       </section>
 
-      <section id="tab-shop" class="tab-panel" data-tab-panel="shop">
-        <div class="section-header"><div><h1>Boutique attenante</h1><p>Transforme les surplus en produits emballés et vends-les depuis une vitrine personnalisable.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour au domaine</button></div>
-        <div id="shopSummary" class="system-summary"></div>
-        <div id="shopQueue" class="production-queue"></div>
-        <div id="shopProducts" class="shop-grid"></div>
-      </section>
-
       <section id="tab-technology" class="tab-panel" data-tab-panel="technology">
         <div class="section-header"><div><h1>Technologies du Comptoir</h1><p>Une progression tardive qui automatise les tâches répétitives sans supprimer les décisions.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
         <div id="technologyGrid" class="tech-tree"></div>
@@ -217,7 +212,7 @@
             <button class="filter-chip" data-upgrade-filter="automation" type="button">Auto</button>
           </div>
         </div>
-        <div class="machine-room-banner specialist-room"><img src="assets/stations/craft_machine.png" alt="Machine de fabrication"><div><h2>Plans d’amélioration</h2><p>La réputation améliore surtout les ventes et la clientèle ; les vrais déblocages viennent désormais des matériaux, des plans et des machines.</p><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour de fabrication</button></div></div>
+        <div class="machine-room-banner specialist-room"><img src="assets/stations/craft_machine.png" alt="Machine de fabrication"><div><h2>Plans d’amélioration</h2><p>Les déblocages viennent des matériaux, des plans et des machines. Cette page reste accessible directement depuis la barre du bas.</p><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour de fabrication</button></div></div>
         <div id="upgradeGrid" class="card-grid"></div>
       </section>
 
@@ -235,8 +230,8 @@
       <section id="tab-minigame" class="tab-panel" data-tab-panel="minigame">
         <div class="section-header">
           <div>
-            <h1>Réserve pétillante</h1>
-            <p>Élimine des groupes identiques et termine les objectifs avant de manquer de coups.</p>
+            <h1>Tri des matériaux</h1>
+            <p>Élimine des groupes identiques pour récupérer du tissu et des ressources bonus.</p>
           </div>
           <span id="minigameLevelBadge" class="badge">Niveau 1</span>
         </div>
@@ -337,11 +332,11 @@
       <button class="nav-button" data-tab="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Cuisine</small></button>
       <button class="nav-button" data-tab="workshop" type="button"><img src="assets/stations/workbench.png" alt=""><small>Domaine</small></button>
       <button class="nav-button" data-tab="farm" type="button"><img src="assets/food/vegetables_bundle.png" alt=""><small>Ferme</small></button>
-      <button class="nav-button" data-tab="zones" type="button"><img src="assets/building/hanging_sign.png" alt=""><small>Régions</small></button>
+      <button class="nav-button" data-tab="zones" type="button"><img src="assets/resources/wood_log.png" alt=""><small>Collecte</small></button>
       <button class="nav-button" data-tab="staff" type="button"><img src="assets/npcs/tavern_worker_female_01.png" alt=""><small>Équipe</small></button>
-      <button class="nav-button" data-tab="shop" type="button"><img src="assets/stations/display_case.png" alt=""><small>Boutique</small></button>
+      <button class="nav-button" data-tab="upgrades" type="button"><img src="assets/resources/gear.png" alt=""><small>Améliorer</small></button>
       <button class="nav-button" data-tab="collections" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Collections</small></button>
-      <button class="nav-button" data-tab="minigame" type="button"><img src="assets/furniture/basket.png" alt=""><small>Bonus</small></button>
+      <button class="nav-button" data-tab="minigame" type="button"><img src="assets/resources/fabric.png" alt=""><small>Tri</small></button>
       <button class="nav-button" data-tab="objectives" type="button"><img src="assets/furniture/chalkboard_sign.png" alt=""><small>Quêtes</small></button>
       <button class="nav-button" data-tab="settings" type="button"><img src="assets/resources/gear.png" alt=""><small>Réglages</small></button>
     </nav>
@@ -350,7 +345,7 @@
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=3.0.0-build1"></script>
-  <script src="expansion.js?v=3.0.0-build1"></script>
+  <script src="app.js?v=3.1.0-build1"></script>
+  <script src="expansion.js?v=3.1.0-build1"></script>
 </body>
 </html>
