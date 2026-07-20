@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.2.1';
+  const GAME_VERSION = '1.3.0';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -189,7 +189,16 @@
   ];
 
 
-  const ASSET_BASE = 'assets/pixel/';
+  // Les noms logiques sont conservés pour ne pas casser la logique existante.
+  // Seuls les chemins pointent désormais vers le pack d'assets propre.
+  const ASSET_PATHS = {
+    bread: 'assets/food/bread_loaf.png', cheese: 'assets/food/cheese_wedge.png', vegetables: 'assets/food/vegetables_bundle.png', fruits: 'assets/food/fruits_basket.png', coffee: 'assets/food/coffee_cup.png', sugar: 'assets/resources/sugar.png', spices: 'assets/food/herbs_bunch.png', fish: 'assets/food/fish_ingredient.png', mushroom: 'assets/food/mushroom.png', wood: 'assets/resources/wood_log.png', stone: 'assets/resources/stone.png', ingot: 'assets/resources/ingot.png', fabric: 'assets/resources/fabric.png', glass: 'assets/resources/glass.png', ore: 'assets/resources/ore.png',
+    tart: 'assets/food/tart.png', soup: 'assets/food/soup_bowl.png', skewer: 'assets/food/skewer.png', tray: 'assets/resources/tray.png', plate: 'assets/food/plate.png', carrot: 'assets/food/vegetables_bundle.png',
+    client_red: 'assets/clients/client_red_haired_01.png', client_cat: 'assets/clients/client_cat_01.png', client_dwarf: 'assets/clients/client_dwarf_01.png', client_elder: 'assets/clients/client_elder_01.png', player_idle: 'assets/player/idle_01.png', player_walk: 'assets/player/walk_01.png', player_carry: 'assets/player/carry_01.png',
+    zone_market: 'assets/regions/market.png', zone_forest: 'assets/regions/forest.png', zone_mine: 'assets/regions/mine.png', zone_sea: 'assets/regions/port_des_horizons.png',
+    service_counter: 'assets/furniture/service_counter.png', workbench: 'assets/stations/workbench.png', craft_machine: 'assets/stations/craft_machine.png', storage_chest: 'assets/furniture/storage_chest.png', basket: 'assets/furniture/basket.png', chalkboard: 'assets/furniture/chalkboard_sign.png', gear: 'assets/resources/gear.png', sign: 'assets/building/hanging_sign.png', prep_station: 'assets/stations/prep_station.png', cutting_board: 'assets/stations/cutting_board.png', coffee_machine: 'assets/stations/coffee_machine.png', oven: 'assets/stations/oven.png', display_case: 'assets/stations/display_case.png', service_cart: 'assets/stations/service_cart.png', cash_register: 'assets/stations/cash_register.png', flowers: 'assets/furniture/potted_plant.png', shelf: 'assets/furniture/shelf.png', table_round: 'assets/furniture/table_round.png', chair: 'assets/furniture/chair.png',
+    clean_room: 'assets/regions/tavern_interior.png', door_closed: 'assets/furniture/closed_door.png'
+  };
   const ITEM_ASSETS = {
     bread: 'bread', cheese: 'cheese', vegetables: 'vegetables', fruits: 'fruits', coffee: 'coffee', sugar: 'sugar', spices: 'spices',
     fish: 'fish', mushrooms: 'mushroom', salt: 'sugar', wood: 'wood', stone: 'stone', metal: 'ingot', fabric: 'fabric', glass: 'glass', crystal: 'ore'
@@ -227,7 +236,7 @@
     { uid: 'd-chest', furnitureId: 'chest', slotIndex: 12 }
   ];
 
-  function assetPath(name) { return `${ASSET_BASE}${name}.png`; }
+  function assetPath(name) { return ASSET_PATHS[name] || 'assets/food/plate.png'; }
   function pixelImg(name, alt = '', className = 'pixel-inline') {
     if (!name) return '';
     return `<img src="${assetPath(name)}" alt="${alt.replace(/"/g, '&quot;')}" class="${className}">`;
@@ -273,6 +282,7 @@
       lastSavedAt: 0,
       tutorialSeen: false,
       restaurantOpen: true,
+      farm: { seeds: { vegetables: 4, fruits: 3, spices: 3 }, plots: [null, null, null, null] },
       decorInventory: { table_round: 1, chair: 2, shelf: 1, chest: 1 },
       placedFurniture: DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }))
     };
@@ -320,6 +330,7 @@
       zoneXP: { ...base.zoneXP, ...(raw.zoneXP || {}) },
       cooldowns: { ...(raw.cooldowns || {}) },
       minigame: { ...base.minigame, ...(raw.minigame || {}) },
+      farm: { ...base.farm, ...(raw.farm || {}), seeds: { ...base.farm.seeds, ...(raw.farm?.seeds || {}) }, plots: Array.isArray(raw.farm?.plots) ? raw.farm.plots.slice(0, 4) : base.farm.plots },
       decorInventory: { ...base.decorInventory, ...(raw.decorInventory || {}) },
       placedFurniture: Array.isArray(raw.placedFurniture) ? raw.placedFurniture : base.placedFurniture
     };
@@ -1041,6 +1052,53 @@
     grid.querySelectorAll('.unlock-zone').forEach(button => button.addEventListener('click', () => unlockZone(button.dataset.zone)));
   }
 
+  const FARM_CROPS = {
+    vegetables: { name: 'Légumes', asset: 'vegetables', growMs: 30000, yield: [2, 4] },
+    fruits: { name: 'Fruits', asset: 'fruits', growMs: 45000, yield: [1, 3] },
+    spices: { name: 'Herbes', asset: 'spices', growMs: 38000, yield: [1, 3] }
+  };
+
+  function farmPlotState(plot) {
+    if (!plot) return { status: 'empty', remaining: 0 };
+    const crop = FARM_CROPS[plot.cropId];
+    const remaining = Math.max(0, plot.readyAt - Date.now());
+    return { status: remaining ? 'growing' : 'ready', remaining, crop };
+  }
+
+  function plantCrop(index, cropId) {
+    if (state.farm.plots[index]) return;
+    if ((state.farm.seeds[cropId] || 0) < 1) return toast(`Plus de graines de ${FARM_CROPS[cropId].name.toLowerCase()}.`);
+    state.farm.seeds[cropId] -= 1;
+    state.farm.plots[index] = { cropId, readyAt: Date.now() + FARM_CROPS[cropId].growMs };
+    saveState(); renderFarm(); toast(`${FARM_CROPS[cropId].name} plantés.`);
+  }
+
+  function harvestCrop(index) {
+    const plot = state.farm.plots[index];
+    const plotState = farmPlotState(plot);
+    if (plotState.status !== 'ready') return;
+    const amount = randomInt(...plotState.crop.yield);
+    addResource(plot.cropId, amount);
+    if (Math.random() < .65) state.farm.seeds[plot.cropId] += 1;
+    state.farm.plots[index] = null;
+    saveState(); renderAll(); toast(`Récolte : +${amount} ${plotState.crop.name.toLowerCase()}.`);
+  }
+
+  function renderFarm() {
+    const grid = el('farmPlotGrid');
+    const seeds = el('farmSeeds');
+    if (!grid || !seeds) return;
+    seeds.innerHTML = Object.entries(FARM_CROPS).map(([id, crop]) => `<span class="resource-chip">${pixelImg(crop.asset, crop.name)} ${crop.name} : ${state.farm.seeds[id] || 0} graine(s)</span>`).join('');
+    grid.innerHTML = state.farm.plots.map((plot, index) => {
+      const info = farmPlotState(plot);
+      if (info.status === 'empty') return `<article class="farm-plot empty"><b>Parcelle ${index + 1}</b><small>Choisis une culture</small><div class="farm-actions">${Object.entries(FARM_CROPS).map(([id, crop]) => `<button class="secondary-button plant-crop" data-plot="${index}" data-crop="${id}" type="button">${pixelImg(crop.asset, crop.name)} Planter</button>`).join('')}</div></article>`;
+      if (info.status === 'growing') return `<article class="farm-plot growing"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>${info.crop.name} poussent</b><small>Prêtes dans ${Math.ceil(info.remaining / 1000)} s</small></article>`;
+      return `<article class="farm-plot ready"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>${info.crop.name} prêtes</b><button class="primary-button harvest-crop" data-plot="${index}" type="button">Récolter</button></article>`;
+    }).join('');
+    grid.querySelectorAll('.plant-crop').forEach(button => button.addEventListener('click', () => plantCrop(Number(button.dataset.plot), button.dataset.crop)));
+    grid.querySelectorAll('.harvest-crop').forEach(button => button.addEventListener('click', () => harvestCrop(Number(button.dataset.plot))));
+  }
+
   function gather(zoneId, nodeIndex) {
     const zone = getZone(zoneId);
     if (!zone || !state.unlockedZones.includes(zoneId)) return;
@@ -1587,6 +1645,7 @@
     renderCustomers();
     renderTray();
     if (currentTab === 'kitchen') renderKitchen();
+    if (currentTab === 'farm') renderFarm();
     if (currentTab === 'settings') renderChest();
   }
 
@@ -1611,6 +1670,7 @@
     renderCustomers();
     renderTray();
     renderKitchen();
+    renderFarm();
     renderZones();
     renderUpgrades();
     renderCollections();

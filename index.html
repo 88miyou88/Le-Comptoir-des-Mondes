@@ -8,16 +8,16 @@
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1.2.1">
+  <link rel="stylesheet" href="style.css?v=1.3.0">
 </head>
 <body>
   <div id="app" class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <img class="brand-logo" src="assets/pixel/logo.png" alt="Le Comptoir des Mondes">
+        <img class="brand-logo" src="assets/icon.svg" alt="Le Comptoir des Mondes">
         <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small><span id="versionLabel">V1.2.1</span> · Taverne & atelier</small>
+          <small><span id="versionLabel">V1.3.0</span> · Taverne & atelier</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
@@ -44,17 +44,17 @@
             <div class="toolbar-actions"><button id="toggleLayoutEditor" class="wood-button alt" type="button">Agencer</button><button id="toggleRestaurant" class="wood-button" type="button">Fermer la taverne</button></div>
           </div>
           <div id="restaurantWorld" class="restaurant-world" aria-label="Taverne et atelier en vue trois-quarts">
-            <img class="room-art" src="assets/pixel/clean_room.png" alt="Intérieur pixel art de la taverne-atelier">
-            <button class="station kitchen-station" data-station="kitchen" type="button"><img src="assets/pixel/prep_station.png" alt=""><small>Atelier cuisine</small></button>
-            <button class="station storage-station" data-station="storage" type="button"><img src="assets/pixel/storage_chest.png" alt=""><small>Réserve</small></button>
-            <button class="station register-station" data-station="register" type="button"><img src="assets/pixel/service_counter.png" alt=""><small>Comptoir</small></button>
+            <img class="room-art" src="assets/regions/tavern_interior.png" alt="Intérieur pixel art de la taverne-atelier">
+            <button class="station kitchen-station" data-station="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Atelier cuisine</small></button>
+            <button class="station storage-station" data-station="storage" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Réserve</small></button>
+            <button class="station register-station" data-station="register" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Comptoir</small></button>
             <div id="furnitureLayer" class="furniture-layer"></div><div id="layoutGrid" class="layout-grid" hidden></div><div id="customerLayer" class="customer-layer"></div>
             <div id="player" class="player" aria-label="Votre personnage">
-              <img id="playerSprite" class="player-body" src="assets/pixel/player_idle.png" alt="Artisane de la taverne">
+              <img id="playerSprite" class="player-body" src="assets/player/idle_01.png" alt="Artisane de la taverne">
               <span class="player-shadow"></span>
             </div>
             <div id="moveMarker" class="move-marker" hidden></div>
-            <div id="closedCurtain" class="closed-curtain" hidden><img src="assets/pixel/door_closed.png" alt=""><b>Taverne fermée</b><small>Prépare ton stock tranquillement.</small></div>
+            <div id="closedCurtain" class="closed-curtain" hidden><img src="assets/furniture/closed_door.png" alt=""><b>Taverne fermée</b><small>Prépare ton stock tranquillement.</small></div>
           </div>
           <div class="world-footer">
             <div>
@@ -107,6 +107,15 @@
           <span id="zoneProgressBadge" class="badge">1/4</span>
         </div>
         <div id="zoneGrid" class="zone-grid"></div>
+      </section>
+
+      <section id="tab-farm" class="tab-panel" data-tab-panel="farm">
+        <div class="section-header">
+          <div><h1>Petite ferme</h1><p>Plante, attends quelques instants puis récolte des ingrédients pour la cuisine.</p></div>
+          <span class="badge">Prototype jouable</span>
+        </div>
+        <div id="farmSeeds" class="farm-seeds"></div>
+        <div id="farmPlotGrid" class="farm-grid"></div>
       </section>
 
       <section id="tab-upgrades" class="tab-panel" data-tab-panel="upgrades">
@@ -237,20 +246,21 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Navigation principale">
-      <button class="nav-button active" data-tab="counter" type="button"><img src="assets/pixel/service_counter.png" alt=""><small>Taverne</small></button>
-      <button class="nav-button" data-tab="kitchen" type="button"><img src="assets/pixel/workbench.png" alt=""><small>Atelier</small></button>
-      <button class="nav-button" data-tab="zones" type="button"><img src="assets/pixel/sign.png" alt=""><small>Régions</small></button>
-      <button class="nav-button" data-tab="upgrades" type="button"><img src="assets/pixel/craft_machine.png" alt=""><small>Machines</small></button>
-      <button class="nav-button" data-tab="collections" type="button"><img src="assets/pixel/storage_chest.png" alt=""><small>Collections</small></button>
-      <button class="nav-button" data-tab="minigame" type="button"><img src="assets/pixel/basket.png" alt=""><small>Bonus</small></button>
-      <button class="nav-button" data-tab="objectives" type="button"><img src="assets/pixel/chalkboard.png" alt=""><small>Quêtes</small></button>
-      <button class="nav-button" data-tab="settings" type="button"><img src="assets/pixel/gear.png" alt=""><small>Réglages</small></button>
+      <button class="nav-button active" data-tab="counter" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Taverne</small></button>
+      <button class="nav-button" data-tab="kitchen" type="button"><img src="assets/stations/workbench.png" alt=""><small>Atelier</small></button>
+      <button class="nav-button" data-tab="farm" type="button"><img src="assets/food/vegetables_bundle.png" alt=""><small>Ferme</small></button>
+      <button class="nav-button" data-tab="zones" type="button"><img src="assets/building/hanging_sign.png" alt=""><small>Régions</small></button>
+      <button class="nav-button" data-tab="upgrades" type="button"><img src="assets/stations/craft_machine.png" alt=""><small>Machines</small></button>
+      <button class="nav-button" data-tab="collections" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Collections</small></button>
+      <button class="nav-button" data-tab="minigame" type="button"><img src="assets/furniture/basket.png" alt=""><small>Bonus</small></button>
+      <button class="nav-button" data-tab="objectives" type="button"><img src="assets/furniture/chalkboard_sign.png" alt=""><small>Quêtes</small></button>
+      <button class="nav-button" data-tab="settings" type="button"><img src="assets/resources/gear.png" alt=""><small>Réglages</small></button>
     </nav>
   </div>
 
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=1.2.1"></script>
+  <script src="app.js?v=1.3.0"></script>
 </body>
 </html>
