@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#ff7f79">
-  <meta name="description" content="Un jeu de gestion cosy, de cuisine, d'exploration et de collections.">
+  <meta name="theme-color" content="#263e36">
+  <meta name="description" content="Un jeu cosy de craft, de taverne, de cuisine et de collections.">
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1.0.1">
+  <link rel="stylesheet" href="style.css?v=1.1.0">
 </head>
 <body>
   <div id="app" class="app-shell">
     <header class="topbar">
       <div class="brand">
-        <span class="brand-icon">🍲</span>
-        <div>
+        <img class="brand-logo" src="assets/pixel/logo.png" alt="Le Comptoir des Mondes">
+        <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small id="versionLabel">V1.0</small>
+          <small><span id="versionLabel">V1.1</span> · Taverne & atelier</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
@@ -38,27 +38,30 @@
           <button id="goalShortcut" class="small-button" type="button">Voir</button>
         </div>
 
-        <div class="world-card">
-          <div id="restaurantWorld" class="restaurant-world" aria-label="Salle du restaurant">
-            <div class="floor-pattern"></div>
-            <div class="station kitchen-station" data-station="kitchen"><span>🍳</span><small>Cuisine</small></div>
-            <div class="station storage-station" data-station="storage"><span>📦</span><small>Réserve</small></div>
-            <div class="station register-station" data-station="register"><span>🧾</span><small>Caisse</small></div>
-            <div class="decor plant-one">🌿</div>
-            <div class="decor plant-two">🪴</div>
+        <div class="world-card tavern-frame">
+          <div class="tavern-toolbar">
+            <div class="open-state"><span id="restaurantLamp" class="lamp-dot"></span><b id="restaurantStateLabel">Taverne ouverte</b></div>
+            <button id="toggleRestaurant" class="wood-button" type="button">Fermer la taverne</button>
+          </div>
+          <div id="restaurantWorld" class="restaurant-world" aria-label="Taverne et atelier en vue trois-quarts">
+            <img class="room-art" src="assets/pixel/room.png" alt="Intérieur pixel art de la taverne-atelier">
+            <button class="station kitchen-station" data-station="kitchen" type="button"><img src="assets/pixel/prep_station.png" alt=""><small>Atelier cuisine</small></button>
+            <button class="station storage-station" data-station="storage" type="button"><img src="assets/pixel/storage_chest.png" alt=""><small>Réserve</small></button>
+            <button class="station register-station" data-station="register" type="button"><img src="assets/pixel/service_counter.png" alt=""><small>Comptoir</small></button>
             <div id="customerLayer" class="customer-layer"></div>
             <div id="player" class="player" aria-label="Votre personnage">
-              <span class="player-body">🧑‍🍳</span>
+              <img id="playerSprite" class="player-body" src="assets/pixel/player_idle.png" alt="Artisane de la taverne">
               <span class="player-shadow"></span>
             </div>
             <div id="moveMarker" class="move-marker" hidden></div>
+            <div id="closedCurtain" class="closed-curtain" hidden><img src="assets/pixel/door_closed.png" alt=""><b>Taverne fermée</b><small>Prépare ton stock tranquillement.</small></div>
           </div>
           <div class="world-footer">
             <div>
               <span class="status-dot"></span>
               <span id="worldStatus">Touchez le sol pour vous déplacer.</span>
             </div>
-            <button id="contextAction" class="primary-button" type="button">Cuisine</button>
+            <button id="contextAction" class="primary-button" type="button">Atelier</button>
           </div>
         </div>
 
@@ -84,8 +87,8 @@
       <section id="tab-kitchen" class="tab-panel" data-tab-panel="kitchen">
         <div class="section-header">
           <div>
-            <h1>Cuisine</h1>
-            <p>Prépare des commandes et améliore ton organisation.</p>
+            <h1>Atelier & cuisine</h1>
+            <p>Transforme tes ressources, prépare tes plats et construis ton équipement.</p>
           </div>
           <span id="kitchenSpeedLabel" class="badge">Vitesse normale</span>
         </div>
@@ -96,8 +99,8 @@
       <section id="tab-zones" class="tab-panel" data-tab-panel="zones">
         <div class="section-header">
           <div>
-            <h1>Zones</h1>
-            <p>Explore pour obtenir ingrédients, matériaux et objets rares.</p>
+            <h1>Régions & fournisseurs</h1>
+            <p>Les boutons de récolte sont provisoires : les futures zones seront de vrais lieux en 3/4.</p>
           </div>
           <span id="zoneProgressBadge" class="badge">1/4</span>
         </div>
@@ -232,20 +235,20 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Navigation principale">
-      <button class="nav-button active" data-tab="counter" type="button"><span>🏠</span><small>Comptoir</small></button>
-      <button class="nav-button" data-tab="kitchen" type="button"><span>🍳</span><small>Cuisine</small></button>
-      <button class="nav-button" data-tab="zones" type="button"><span>🗺️</span><small>Zones</small></button>
-      <button class="nav-button" data-tab="upgrades" type="button"><span>🔧</span><small>Améliorer</small></button>
-      <button class="nav-button" data-tab="collections" type="button"><span>🧺</span><small>Collections</small></button>
-      <button class="nav-button" data-tab="minigame" type="button"><span>🫧</span><small>Bonus</small></button>
-      <button class="nav-button" data-tab="objectives" type="button"><span>🎯</span><small>Objectifs</small></button>
-      <button class="nav-button" data-tab="settings" type="button"><span>⚙️</span><small>Réglages</small></button>
+      <button class="nav-button active" data-tab="counter" type="button"><img src="assets/pixel/service_counter.png" alt=""><small>Taverne</small></button>
+      <button class="nav-button" data-tab="kitchen" type="button"><img src="assets/pixel/workbench.png" alt=""><small>Atelier</small></button>
+      <button class="nav-button" data-tab="zones" type="button"><img src="assets/pixel/sign.png" alt=""><small>Régions</small></button>
+      <button class="nav-button" data-tab="upgrades" type="button"><img src="assets/pixel/craft_machine.png" alt=""><small>Machines</small></button>
+      <button class="nav-button" data-tab="collections" type="button"><img src="assets/pixel/storage_chest.png" alt=""><small>Collections</small></button>
+      <button class="nav-button" data-tab="minigame" type="button"><img src="assets/pixel/basket.png" alt=""><small>Bonus</small></button>
+      <button class="nav-button" data-tab="objectives" type="button"><img src="assets/pixel/chalkboard.png" alt=""><small>Quêtes</small></button>
+      <button class="nav-button" data-tab="settings" type="button"><img src="assets/pixel/gear.png" alt=""><small>Réglages</small></button>
     </nav>
   </div>
 
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=1.0.1"></script>
+  <script src="app.js?v=1.1.0"></script>
 </body>
 </html>

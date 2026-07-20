@@ -1,0 +1,25 @@
+MISE À JOUR 1.1.0 — REFONTE PIXEL ART
+
+1. Décompresse ce ZIP.
+2. Envoie directement son contenu à la racine du dépôt GitHub, au même endroit que index.html.
+3. Accepte le remplacement des anciens fichiers.
+4. Attends la fin du déploiement GitHub Pages.
+5. Ouvre une fois l'adresse du jeu avec ?v=110 à la fin.
+
+Exemple :
+https://toncompte.github.io/ton-depot/?v=110
+
+La sauvegarde V1.0 / V1.0.1 reste compatible.
+
+Nouveautés :
+- refonte pixel art en vue 3/4 ;
+- nouveau décor de taverne-atelier ;
+- personnage et clients pixel art ;
+- objets, machines, ressources et recettes illustrés ;
+- cartes de régions illustrées ;
+- interface bois/parchemin ;
+- bouton ouvrir / fermer la taverne ;
+- clients en pause quand la taverne est fermée ;
+- tutoriel revu ;
+- notifications limitées à une seule à la fois ;
+- cache PWA versionné en 1.1.0.

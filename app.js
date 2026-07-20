@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.0.1';
+  const GAME_VERSION = '1.1.0';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -180,13 +180,46 @@
   ].map(([id, title, description, type, metric, target, reward]) => ({ id, title, description, type, metric, target, reward }));
 
   const MINI_TILES = [
-    { id: 'berry', icon: '🍓' },
-    { id: 'coffee', icon: '☕' },
-    { id: 'cheese', icon: '🧀' },
-    { id: 'carrot', icon: '🥕' },
-    { id: 'fish', icon: '🐟' },
-    { id: 'mushroom', icon: '🍄' }
+    { id: 'berry', icon: '🍓', asset: 'fruits' },
+    { id: 'coffee', icon: '☕', asset: 'coffee' },
+    { id: 'cheese', icon: '🧀', asset: 'cheese' },
+    { id: 'carrot', icon: '🥕', asset: 'carrot' },
+    { id: 'fish', icon: '🐟', asset: 'fish' },
+    { id: 'mushroom', icon: '🍄', asset: 'mushroom' }
   ];
+
+
+  const ASSET_BASE = 'assets/pixel/';
+  const ITEM_ASSETS = {
+    bread: 'bread', cheese: 'cheese', vegetables: 'vegetables', fruits: 'fruits', coffee: 'coffee', sugar: 'sugar', spices: 'spices',
+    fish: 'fish', mushrooms: 'mushroom', salt: 'sugar', wood: 'wood', stone: 'stone', metal: 'ingot', fabric: 'fabric', glass: 'glass', crystal: 'ore'
+  };
+  const RECIPE_ASSETS = {
+    toast: 'bread', cheese_sandwich: 'cheese', sweet_coffee: 'coffee', salad: 'vegetables', fruit_tart: 'tart', forest_soup: 'soup',
+    spicy_skewer: 'skewer', grilled_fish: 'grilled_fish', display_dessert: 'tart', counter_menu: 'tray'
+  };
+  const CLIENT_SPRITES = {
+    classic: 'client_red', student: 'client_cat', rushed: 'client_dwarf', foodie: 'client_elder', tourist: 'client_red', mystery: 'client_cat', inspector: 'client_elder'
+  };
+  const ZONE_ART = { quarter: 'zone_market', forest: 'zone_forest', mine: 'zone_mine', sea: 'zone_sea' };
+  const UPGRADE_ASSETS = {
+    counter_2: 'service_counter', counter_3: 'service_counter', counter_4: 'floor_dark', cutting_board: 'cutting_board', coffee_machine: 'coffee_machine',
+    oven: 'oven', shelf: 'shelf', display_case: 'display_case', wood_tray: 'tray', strong_tray: 'service_cart', register: 'cash_register',
+    helper_counter: 'client_red', helper_kitchen: 'player_carry', ingredient_delivery: 'basket', wood_collector: 'workbench', better_tools: 'workbench',
+    market_contacts: 'sign', cold_storage: 'storage_chest', zone_cart: 'service_cart', lucky_charm: 'flowers', smart_schedule: 'craft_machine'
+  };
+
+  function assetPath(name) { return `${ASSET_BASE}${name}.png`; }
+  function pixelImg(name, alt = '', className = 'pixel-inline') {
+    if (!name) return '';
+    return `<img src="${assetPath(name)}" alt="${alt.replace(/"/g, '&quot;')}" class="${className}">`;
+  }
+  function itemImg(key, className = 'pixel-inline') { return pixelImg(ITEM_ASSETS[key], ITEMS[key]?.name || key, className); }
+  function recipeImg(recipeOrId, className = 'pixel-inline') {
+    const id = typeof recipeOrId === 'string' ? recipeOrId : recipeOrId?.id;
+    const recipe = typeof recipeOrId === 'string' ? getRecipe(recipeOrId) : recipeOrId;
+    return pixelImg(RECIPE_ASSETS[id] || 'plate', recipe?.name || id, className);
+  }
 
   function defaultState() {
     return {
@@ -220,7 +253,8 @@
       cooldowns: {},
       minigame: { level: 1, bestLevel: 1 },
       lastSavedAt: 0,
-      tutorialSeen: false
+      tutorialSeen: false,
+      restaurantOpen: true
     };
   }
 
@@ -289,12 +323,25 @@
     if (showToast) toast('Partie sauvegardée.');
   }
 
+  let activeToast = null;
+  let activeToastTimer = null;
+
   function toast(message) {
-    const node = document.createElement('div');
-    node.className = 'toast';
-    node.textContent = message;
-    el('toastLayer').appendChild(node);
-    setTimeout(() => node.remove(), 3100);
+    const layer = el('toastLayer');
+    if (!activeToast) {
+      activeToast = document.createElement('div');
+      activeToast.className = 'toast';
+      layer.replaceChildren(activeToast);
+    }
+    activeToast.textContent = message;
+    activeToast.style.animation = 'none';
+    activeToast.offsetHeight;
+    activeToast.style.animation = '';
+    clearTimeout(activeToastTimer);
+    activeToastTimer = setTimeout(() => {
+      activeToast?.remove();
+      activeToast = null;
+    }, 1850);
     vibrate(18);
   }
 
@@ -329,6 +376,23 @@
     el('modalLayer').innerHTML = '';
   }
 
+
+  function showTutorial(force = false) {
+    if (!force && state.tutorialSeen) return;
+    const html = `
+      <p>Le jeu est maintenant organisé autour de la préparation et du craft.</p>
+      <div class="tutorial-steps">
+        <div class="tutorial-step"><div class="tutorial-num">1</div><div><b>Ferme la taverne pour préparer</b><small>Le bouton au-dessus de la salle permet d'ouvrir ou fermer la taverne. Fermée, aucun client n'arrive et rien ne presse.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Fabrique ton stock</b><small>Va dans Atelier pour transformer tes ingrédients en plats. Les futures versions ajouteront le vrai craft de meubles, outils et machines.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">3</div><div><b>Ouvre quand tu es prête</b><small>Quand plusieurs plats sont prêts, ouvre la taverne. Les clients arrivent et demandent une recette précise.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">4</div><div><b>Déplace-toi et sers</b><small>Touche le sol pour déplacer ton personnage, puis touche un client pour lui apporter le plat correspondant.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Utilise les régions et le bonus</b><small>Les régions fournissent provisoirement les ressources par boutons. Le mini-jeu Bonus reste accessible à tout moment.</small></div></div>
+      </div>`;
+    showModal('Bienvenue au Comptoir', html, [
+      { label: 'J’ai compris', className: 'primary-button', action: () => { state.tutorialSeen = true; saveState(); } }
+    ]);
+  }
+
   function addResource(key, amount) {
     if (key === 'coins') state.coins += amount;
     else if (key === 'reputation') state.reputation += amount;
@@ -342,9 +406,8 @@
 
   function rewardHtml(reward) {
     return Object.entries(reward || {}).map(([key, amount]) => {
-      const item = ITEMS[key];
-      const icon = key === 'coins' ? '🪙' : key === 'reputation' ? '⭐' : key === 'diamonds' ? '💎' : (item?.icon || '🎁');
-      return `<span class="resource-chip">${icon} ${fmt(amount)}</span>`;
+      const visual = key === 'coins' ? '🪙' : key === 'reputation' ? '⭐' : key === 'diamonds' ? '💎' : itemImg(key);
+      return `<span class="resource-chip">${visual} ${fmt(amount)}</span>`;
     }).join('');
   }
 
@@ -361,7 +424,7 @@
   }
 
   function materialChips(materials = {}) {
-    return Object.entries(materials).map(([key, amount]) => `<span class="resource-chip">${ITEMS[key]?.icon || ''} ${amount}</span>`).join('');
+    return Object.entries(materials).map(([key, amount]) => `<span class="resource-chip">${itemImg(key)} ${amount}</span>`).join('');
   }
 
   function getEffects() {
@@ -418,9 +481,43 @@
     el('activeGoalProgress').style.width = `${clamp(value / objective.target * 100, 0, 100)}%`;
   }
 
+  function renderRestaurantState() {
+    const card = document.querySelector('.world-card');
+    const button = el('toggleRestaurant');
+    const curtain = el('closedCurtain');
+    const label = el('restaurantStateLabel');
+    if (!card || !button || !curtain || !label) return;
+    card.classList.toggle('closed', !state.restaurantOpen);
+    curtain.hidden = state.restaurantOpen;
+    label.textContent = state.restaurantOpen ? 'Taverne ouverte' : 'Taverne fermée';
+    button.textContent = state.restaurantOpen ? 'Fermer la taverne' : 'Ouvrir la taverne';
+    el('worldStatus').textContent = state.restaurantOpen
+      ? 'La taverne est ouverte : prépare et sers les commandes.'
+      : 'Taverne fermée : cuisine, collecte et améliore sans pression.';
+  }
+
+  function toggleRestaurant() {
+    state.restaurantOpen = !state.restaurantOpen;
+    if (!state.restaurantOpen) {
+      state.customers = [];
+      state.stats.currentCombo = 0;
+      toast('Taverne fermée. Les clients reviendront à la prochaine ouverture.');
+    } else {
+      state.nextCustomerAt = Date.now() + 1200;
+      toast('Taverne ouverte : les premiers clients arrivent.');
+    }
+    saveState();
+    renderAll();
+  }
+
   function renderPlayer() {
     el('player').style.left = `${state.player.x * 100}%`;
     el('player').style.top = `${state.player.y * 100}%`;
+    const sprite = el('playerSprite');
+    if (sprite) {
+      const walking = el('player').classList.contains('walking');
+      sprite.src = assetPath(state.tray.length ? 'player_carry' : walking ? 'player_walk' : 'player_idle');
+    }
   }
 
   function customerSlot(index) {
@@ -447,7 +544,7 @@
       node.dataset.customerId = customer.id;
       const pct = clamp(customer.patience / customer.maxPatience * 100, 0, 100);
       const color = pct < 28 ? 'var(--danger)' : pct < 55 ? 'var(--yellow)' : 'var(--green)';
-      node.innerHTML = `<span class="customer-emoji">${customer.emoji}</span><span class="customer-order">${recipe.icon} ${recipe.name}</span><span class="patience-bar"><span style="width:${pct}%;background:${color}"></span></span>`;
+      node.innerHTML = `<img class="customer-sprite" src="${assetPath(customer.sprite || CLIENT_SPRITES[customer.typeId] || 'client_red')}" alt="${customer.name}"><span class="customer-order">${recipeImg(recipe, 'pixel-small')}<span>${recipe.name}</span></span><span class="patience-bar"><span style="width:${pct}%;background:${color}"></span></span>`;
       node.addEventListener('pointerdown', event => {
         event.stopPropagation();
         moveTo(slot.x, slot.y, { type: 'serve', customerId: customer.id });
@@ -459,12 +556,12 @@
     const queue = el('customerQueue');
     if (!state.customers.length) {
       queue.className = 'customer-queue empty-state';
-      queue.textContent = 'Aucun client pour le moment. Profites-en pour cuisiner ou explorer.';
+      queue.textContent = 'Aucun client pour le moment. Profites-en pour cuisiner, fabriquer ou collecter.';
     } else {
       queue.className = 'customer-queue';
       queue.innerHTML = state.customers.map(c => {
         const recipe = getRecipe(c.recipeId);
-        return `<div class="queue-chip"><span>${c.emoji}</span><span><b>${recipe.icon} ${recipe.name}</b><small>${Math.ceil(c.patience)} s</small></span></div>`;
+        return `<div class="queue-chip"><img class="pixel-small" src="${assetPath(c.sprite || CLIENT_SPRITES[c.typeId] || 'client_red')}" alt=""><span><b>${recipeImg(recipe, 'pixel-small')} ${recipe.name}</b><small>${Math.ceil(c.patience)} s</small></span></div>`;
       }).join('');
     }
   }
@@ -481,7 +578,7 @@
     tray.className = 'ready-tray';
     tray.innerHTML = state.tray.map((recipeId, i) => {
       const recipe = getRecipe(recipeId);
-      return `<div class="tray-chip" title="Plat ${i + 1}"><span>${recipe.icon}</span><b>${recipe.name}</b></div>`;
+      return `<div class="tray-chip" title="Plat ${i + 1}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b></div>`;
     }).join('');
   }
 
@@ -498,7 +595,7 @@
         const left = Math.max(0, c.readyAt - Date.now());
         const pct = clamp((1 - left / duration) * 100, 0, 100);
         const ready = left <= 0;
-        return `<div class="cooking-item"><span class="card-icon">${recipe.icon}</span><div><b>${recipe.name}</b><div class="cooking-progress"><span style="width:${pct}%"></span></div></div><small>${ready ? 'Prêt' : `${Math.ceil(left / 1000)} s`}</small></div>`;
+        return `<div class="cooking-item"><span class="card-icon">${recipeImg(recipe, 'pixel-card-icon')}</span><div><b>${recipe.name}</b><div class="cooking-progress"><span style="width:${pct}%"></span></div></div><small>${ready ? 'Prêt' : `${Math.ceil(left / 1000)} s`}</small></div>`;
       }).join('');
     }
 
@@ -509,10 +606,10 @@
       const effectivePrep = getPrepTime(recipe);
       const ingredients = Object.entries(recipe.ingredients).map(([key, amount]) => {
         const owned = state.inventory[key] || 0;
-        return `<span class="resource-chip" title="${ITEMS[key].name}">${ITEMS[key].icon} ${owned}/${amount}</span>`;
+        return `<span class="resource-chip" title="${ITEMS[key].name}">${itemImg(key)} ${owned}/${amount}</span>`;
       }).join('');
       return `<article class="game-card ${unlocked ? '' : 'locked'}">
-        <div class="card-top"><div><div class="card-icon">${unlocked ? recipe.icon : '🔒'}</div><h3>${recipe.name}</h3></div><span class="badge">${recipe.tag}</span></div>
+        <div class="card-top"><div><div class="card-icon">${unlocked ? recipeImg(recipe, 'pixel-card-icon') : '🔒'}</div><h3>${recipe.name}</h3></div><span class="badge">${recipe.tag}</span></div>
         <p>${unlocked ? `${Math.ceil(effectivePrep / 1000)} s · ${recipe.price} pièces de base` : unlockRecipeText(recipe)}</p>
         <div class="ingredient-row">${ingredients}</div>
         <div class="card-actions"><button class="primary-button cook-button" data-recipe-id="${recipe.id}" type="button" ${canCookNow ? '' : 'disabled'}>${unlocked ? 'Préparer' : 'Verrouillé'}</button></div>
@@ -606,6 +703,7 @@
   }
 
   function spawnCustomer() {
+    if (!state.restaurantOpen) return;
     const effects = getEffects();
     if (state.customers.length >= effects.maxCustomers) {
       state.nextCustomerAt = Date.now() + 4500;
@@ -620,6 +718,7 @@
       typeId: type.id,
       name: type.name,
       emoji: type.emoji,
+      sprite: CLIENT_SPRITES[type.id] || 'client_red',
       recipeId: recipe.id,
       patience: maxPatience,
       maxPatience,
@@ -663,7 +762,7 @@
     state.reputation += rep;
     state.stats.coinsEarned += reward;
     state.stats.served += 1;
-    if (!automatic) toast(`${customer.emoji} +${reward} 🪙 · +${rep} ⭐${state.stats.currentCombo >= 3 ? ` · combo x${state.stats.currentCombo}` : ''}`);
+    if (!automatic) toast(`Commande servie : +${reward} 🪙 · +${rep} ⭐${state.stats.currentCombo >= 3 ? ` · combo x${state.stats.currentCombo}` : ''}`);
     else toast(`L’aide-comptoir a servi ${recipe.name}.`);
     maybeFindCollectible(customer.typeId === 'tourist' ? 'sea' : 'quarter', 0.02);
     saveState();
@@ -679,7 +778,7 @@
       state.reputation = Math.max(0, state.reputation - 5);
       toast('L’inspectrice est repartie : -5 réputation.');
     } else {
-      toast(`${customer.emoji} est reparti sans être servi.`);
+      toast(`${customer.name} est reparti sans être servi.`);
     }
   }
 
@@ -696,14 +795,14 @@
       const nodes = unlocked ? `<div class="gather-area">${zone.nodes.map((node, index) => {
         const key = `${zone.id}:${index}`;
         const cooling = (state.cooldowns[key] || 0) > Date.now();
-        return `<button class="gather-button ${cooling ? 'cooling' : ''}" data-zone="${zone.id}" data-node="${index}" type="button" ${cooling ? 'disabled' : ''}>${node.icon}<small>${node.label}</small></button>`;
+        return `<button class="gather-button ${cooling ? 'cooling' : ''}" data-zone="${zone.id}" data-node="${index}" type="button" ${cooling ? 'disabled' : ''}>${itemImg(node.item, 'pixel-card-icon')}<small>${node.label}</small></button>`;
       }).join('')}</div>` : '';
       const materialCosts = Object.fromEntries(Object.entries(zone.unlockCost).filter(([k]) => k !== 'coins'));
       return `<article class="zone-card ${unlocked ? '' : 'locked'}">
-        <div class="zone-art ${zone.className}"><span>${zone.icon}</span><span class="badge">${unlocked ? `Niv. ${level}` : `${zone.repNeed} ⭐`}</span></div>
+        <div class="zone-art ${zone.className}"><img class="zone-scene" src="${assetPath(ZONE_ART[zone.id])}" alt="${zone.name}"><span class="badge">${unlocked ? `Niv. ${level}` : `${zone.repNeed} ⭐`}</span></div>
         <div class="zone-body">
           <h2>${zone.name}</h2><p>${zone.description}</p>
-          ${unlocked ? `<div class="zone-meter"><span style="width:${pct}%"></span></div><small>${xp % 25}/25 exploration avant le niveau suivant</small>${nodes}` : `<div class="cost-row"><span class="resource-chip">🪙 ${fmt(zone.unlockCost.coins || 0)}</span>${materialChips(materialCosts)}</div><button class="primary-button wide unlock-zone" data-zone="${zone.id}" type="button" ${repOk && costOk ? '' : 'disabled'}>${repOk ? 'Débloquer la zone' : `Il faut ${zone.repNeed} réputation`}</button>`}
+          ${unlocked ? `<div class="zone-meter"><span style="width:${pct}%"></span></div><small>${xp % 25}/25 passages avant le niveau fournisseur suivant</small>${nodes}` : `<div class="cost-row"><span class="resource-chip">🪙 ${fmt(zone.unlockCost.coins || 0)}</span>${materialChips(materialCosts)}</div><button class="primary-button wide unlock-zone" data-zone="${zone.id}" type="button" ${repOk && costOk ? '' : 'disabled'}>${repOk ? 'Débloquer la zone' : `Il faut ${zone.repNeed} réputation`}</button>`}
         </div>
       </article>`;
     }).join('');
@@ -760,7 +859,7 @@
         else if (upgrade.zone) lockText = `Nécessite ${getZone(upgrade.zone)?.name}`;
       }
       return `<article class="game-card ${available || bought ? '' : 'locked'}">
-        <div class="card-top"><div><div class="card-icon">${bought ? '✅' : upgrade.icon}</div><h3>${upgrade.name}</h3></div><span class="badge">${upgrade.category}</span></div>
+        <div class="card-top"><div><div class="card-icon">${bought ? '✅' : pixelImg(UPGRADE_ASSETS[upgrade.id] || 'craft_machine', upgrade.name, 'pixel-card-icon')}</div><h3>${upgrade.name}</h3></div><span class="badge">${upgrade.category}</span></div>
         <p>${upgrade.desc}</p>
         <div class="cost-row"><span class="resource-chip">🪙 ${fmt(finalCoins)}</span>${materialChips(materialCosts)}</div>
         <div class="card-actions"><button class="${bought ? 'secondary-button' : 'primary-button'} buy-upgrade" data-upgrade="${upgrade.id}" type="button" ${canBuy ? '' : 'disabled'}>${bought ? 'Achetée' : lockText || 'Acheter'}</button></div>
@@ -995,9 +1094,9 @@
       station.addEventListener('pointerdown', event => {
         event.stopPropagation();
         const map = {
-          kitchen: { x: .12, y: .28, tab: 'kitchen' },
-          storage: { x: .86, y: .28, tab: 'zones' },
-          register: { x: .83, y: .78, tab: 'upgrades' }
+          kitchen: { x: .58, y: .30, tab: 'kitchen' },
+          storage: { x: .88, y: .47, tab: 'zones' },
+          register: { x: .73, y: .78, tab: 'upgrades' }
         };
         const target = map[station.dataset.station];
         moveTo(target.x, target.y, { type: 'tab', tab: target.tab });
@@ -1068,13 +1167,13 @@
       bubbles: 'Retirer toutes les bulles',
       crates: 'Casser toutes les caisses',
       mixed: 'Retirer les bulles et casser les caisses',
-      colors: `Retirer ${mini.colorTarget} ${miniTile(mini.colorId).icon}`
+      colors: `Retirer ${mini.colorTarget} ingrédients identiques`
     };
     el('minigameObjective').textContent = objectiveNames[mini.objectiveType];
     const details = [];
     if (['bubbles', 'mixed'].includes(mini.objectiveType)) details.push(`<span class="objective-detail">🫧 ${remaining.bubbles}</span>`);
     if (['crates', 'mixed'].includes(mini.objectiveType)) details.push(`<span class="objective-detail">📦 ${remaining.crates}</span>`);
-    if (mini.objectiveType === 'colors') details.push(`<span class="objective-detail">${miniTile(mini.colorId).icon} ${remaining.colors}</span>`);
+    if (mini.objectiveType === 'colors') details.push(`<span class="objective-detail">${pixelImg(miniTile(mini.colorId).asset, mini.colorId, 'pixel-small')} ${remaining.colors}</span>`);
     el('miniObjectiveDetails').innerHTML = details.join('');
     el('shuffleMini').disabled = mini.shuffles <= 0 || mini.won || mini.lost;
     el('shuffleMini').textContent = `Mélanger (${mini.shuffles})`;
@@ -1089,7 +1188,7 @@
       if (cell.crate) button.dataset.hp = cell.crate;
       button.setAttribute('role', 'gridcell');
       button.setAttribute('aria-label', cell.crate ? `Caisse, résistance ${cell.crate}` : `${miniTile(cell.tile).id}${cell.bubble ? ', bulle' : ''}`);
-      button.textContent = cell.crate ? '📦' : miniTile(cell.tile).icon;
+      button.innerHTML = cell.crate ? pixelImg('crate', 'Caisse', 'pixel-card-icon') : pixelImg(miniTile(cell.tile).asset, miniTile(cell.tile).id, 'pixel-card-icon');
       if (!cell.crate && !mini.won && !mini.lost) button.addEventListener('click', () => miniClick(index));
       board.appendChild(button);
     });
@@ -1238,13 +1337,15 @@
   }
 
   function tickSecond() {
-    if (Date.now() >= state.nextCustomerAt) spawnCustomer();
-    const expired = [];
-    state.customers.forEach(customer => {
-      customer.patience -= 1;
-      if (customer.patience <= 0) expired.push(customer);
-    });
-    expired.forEach(loseCustomer);
+    if (state.restaurantOpen && Date.now() >= state.nextCustomerAt) spawnCustomer();
+    if (state.restaurantOpen) {
+      const expired = [];
+      state.customers.forEach(customer => {
+        customer.patience -= 1;
+        if (customer.patience <= 0) expired.push(customer);
+      });
+      expired.forEach(loseCustomer);
+    }
     processAutomation();
     processCooking();
     renderHUD();
@@ -1269,6 +1370,7 @@
   function renderAll() {
     renderHUD();
     renderActiveGoal();
+    renderRestaurantState();
     renderPlayer();
     renderCustomers();
     renderTray();
@@ -1286,6 +1388,7 @@
     document.querySelectorAll('[data-open-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.openTab)));
     el('goalShortcut').addEventListener('click', () => switchTab('objectives'));
     el('contextAction').addEventListener('click', () => switchTab('kitchen'));
+    el('toggleRestaurant').addEventListener('click', toggleRestaurant);
     document.querySelectorAll('[data-upgrade-filter]').forEach(button => button.addEventListener('click', () => {
       upgradeFilter = button.dataset.upgradeFilter;
       document.querySelectorAll('[data-upgrade-filter]').forEach(b => b.classList.toggle('active', b === button));

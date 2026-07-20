@@ -1,13 +1,13 @@
 {
-  "name": "Le Comptoir des Mondes",
+  "name": "Le Comptoir des Mondes — Taverne & Atelier",
   "short_name": "Comptoir",
-  "description": "Jeu cosy de gestion, cuisine, exploration et collections.",
+  "description": "Jeu cosy de craft, de taverne et de collections en pixel art.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#fff8f0",
-  "theme_color": "#ff7f79",
+  "background_color": "#d9bf91",
+  "theme_color": "#263e36",
   "icons": [
     {
       "src": "assets/icon.svg",
