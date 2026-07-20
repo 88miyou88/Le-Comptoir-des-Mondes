@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.2.0';
+  const GAME_VERSION = '1.2.1';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -211,13 +211,20 @@
   const FURNITURE = {
     table_round: { id: 'table_round', name: 'Table ronde', asset: 'table_round' },
     chair: { id: 'chair', name: 'Chaise', asset: 'chair' },
-    plant: { id: 'plant', name: 'Plante', asset: 'plant' },
-    crate: { id: 'crate', name: 'Caisse', asset: 'crate' }
+    shelf: { id: 'shelf', name: 'Étagère', asset: 'shelf' },
+    chest: { id: 'chest', name: 'Petit coffre', asset: 'storage_chest' }
   };
   const LAYOUT_SLOTS = [
-    { x: .18, y: .74 }, { x: .31, y: .72 }, { x: .45, y: .69 }, { x: .59, y: .66 }, { x: .73, y: .63 },
-    { x: .23, y: .61 }, { x: .37, y: .58 }, { x: .52, y: .55 }, { x: .66, y: .52 },
-    { x: .29, y: .48 }, { x: .43, y: .45 }, { x: .58, y: .43 }
+    { x: .18, y: .72 }, { x: .27, y: .65 }, { x: .37, y: .60 }, { x: .48, y: .57 }, { x: .60, y: .55 },
+    { x: .27, y: .80 }, { x: .39, y: .76 }, { x: .52, y: .73 }, { x: .66, y: .70 }, { x: .79, y: .67 },
+    { x: .45, y: .85 }, { x: .61, y: .83 }, { x: .76, y: .81 }
+  ];
+  const DEFAULT_PLACED_FURNITURE = [
+    { uid: 'd-table', furnitureId: 'table_round', slotIndex: 2 },
+    { uid: 'd-chair-a', furnitureId: 'chair', slotIndex: 1 },
+    { uid: 'd-chair-b', furnitureId: 'chair', slotIndex: 6 },
+    { uid: 'd-shelf', furnitureId: 'shelf', slotIndex: 9 },
+    { uid: 'd-chest', furnitureId: 'chest', slotIndex: 12 }
   ];
 
   function assetPath(name) { return `${ASSET_BASE}${name}.png`; }
@@ -266,8 +273,8 @@
       lastSavedAt: 0,
       tutorialSeen: false,
       restaurantOpen: true,
-      decorInventory: { table_round: 1, chair: 2, plant: 1, crate: 1 },
-      placedFurniture: []
+      decorInventory: { table_round: 1, chair: 2, shelf: 1, chest: 1 },
+      placedFurniture: DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }))
     };
   }
 
@@ -316,6 +323,12 @@
       decorInventory: { ...base.decorInventory, ...(raw.decorInventory || {}) },
       placedFurniture: Array.isArray(raw.placedFurniture) ? raw.placedFurniture : base.placedFurniture
     };
+    const validFurnitureIds = new Set(Object.keys(FURNITURE));
+    merged.decorInventory = Object.fromEntries(Object.keys(base.decorInventory).map(key => [key, Number(merged.decorInventory[key] || 0)]));
+    merged.placedFurniture = (Array.isArray(merged.placedFurniture) ? merged.placedFurniture : [])
+      .filter(item => validFurnitureIds.has(item.furnitureId) && Number.isInteger(item.slotIndex) && item.slotIndex >= 0 && item.slotIndex < LAYOUT_SLOTS.length)
+      .map(item => ({ uid: item.uid || `${item.furnitureId}-${item.slotIndex}`, furnitureId: item.furnitureId, slotIndex: item.slotIndex }));
+    if (!merged.placedFurniture.length) merged.placedFurniture = DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }));
     merged.saveVersion = SAVE_VERSION;
     merged.gameVersion = GAME_VERSION;
     return merged;
@@ -537,8 +550,15 @@
     selectedFurnitureId = null;
     el('layoutEditorPanel').hidden = !layoutEditing;
     el('layoutGrid').hidden = !layoutEditing;
-    if (layoutEditing) toast('Mode agencement activé.');
-    else toast('Agencement enregistré.');
+    if (layoutEditing) {
+      state.restaurantOpen = false;
+      state.customers = [];
+      state.stats.currentCombo = 0;
+      toast('Mode agencement activé.');
+    } else {
+      toast('Agencement enregistré.');
+    }
+    saveState();
     renderAll();
   }
 
@@ -723,6 +743,13 @@
   function renderCustomers() {
     const layer = el('customerLayer');
     layer.innerHTML = '';
+    if (layoutEditing) {
+      el('customerCountBadge').textContent = 'agencement';
+      const queue = el('customerQueue');
+      queue.className = 'customer-queue empty-state';
+      queue.textContent = 'Mode agencement : la salle est vidée pour placer les meubles.';
+      return;
+    }
     state.customers.forEach((customer, index) => {
       const slot = customerSlot(index);
       customer.x = slot.x;

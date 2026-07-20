@@ -824,3 +824,22 @@ img { image-rendering: pixelated; }
 .mini-icon-button { border:1px solid #ab7a4a; background:#fff5e2; border-radius:8px; padding:4px 6px; font-size:14px; cursor:pointer; }
 .cooking-item.waiting-stock small { color:#8b5a35; font-weight:700; }
 @media (max-width: 700px) { .toolbar-actions { width:100%; justify-content:stretch; } .toolbar-actions .wood-button { flex:1; min-width:0; } }
+
+
+/* V1.2.1 overrides */
+.room-art { object-position: center center !important; object-fit: contain !important; }
+.customer-avatar { width: 72px !important; min-height: 94px !important; background: transparent !important; border: 0 !important; overflow: visible !important; padding: 8px !important; }
+.customer-avatar::before { content: none !important; display: none !important; }
+.customer-avatar::after { content: "" !important; position: absolute !important; left: 50% !important; bottom: 31px !important; transform: translateX(-50%) !important; width: 34px !important; height: 10px !important; border-radius: 50% !important; background: rgba(0,0,0,.14) !important; box-shadow: none !important; pointer-events: none !important; }
+.customer-sprite { width: 54px !important; height: 68px !important; margin: 0 auto 4px !important; filter: drop-shadow(0 3px 0 rgba(47,28,16,.20)) !important; }
+.customer-order { max-width: 118px !important; padding: 4px 6px !important; }
+.patience-bar { width: 52px !important; margin-top: 3px !important; }
+.furniture-item.table_round img { width: 76px !important; height: 58px !important; }
+.furniture-item.chair img { width: 38px !important; height: 56px !important; }
+.furniture-item.shelf img { width: 58px !important; height: 70px !important; }
+.furniture-item.chest img { width: 56px !important; height: 44px !important; }
+.layout-slot { width: 44px !important; height: 24px !important; }
+@media (max-width: 480px) {
+  .customer-avatar { width: 64px !important; min-height: 86px !important; }
+  .customer-sprite { width: 48px !important; height: 62px !important; }
+}
