@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.0.0';
+  const GAME_VERSION = '1.0.1';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -219,7 +219,8 @@
       zoneXP: { quarter: 0, forest: 0, mine: 0, sea: 0 },
       cooldowns: {},
       minigame: { level: 1, bestLevel: 1 },
-      lastSavedAt: 0
+      lastSavedAt: 0,
+      tutorialSeen: false
     };
   }
 
@@ -1307,6 +1308,7 @@
     el('soundToggle').addEventListener('change', event => { state.settings.sound = event.target.checked; saveState(); });
     el('reducedMotionToggle').addEventListener('change', event => { state.settings.reducedMotion = event.target.checked; document.documentElement.classList.toggle('reduced-motion', event.target.checked); saveState(); });
     el('vibrationToggle').addEventListener('change', event => { state.settings.vibration = event.target.checked; saveState(); });
+    el('openTutorial').addEventListener('click', () => showTutorial(true));
     el('modalLayer').addEventListener('click', event => { if (event.target === el('modalLayer')) closeModal(); });
     window.addEventListener('beforeunload', () => saveState());
     document.addEventListener('visibilitychange', () => { if (document.hidden) saveState(); });
@@ -1323,5 +1325,6 @@
   renderAll();
   registerServiceWorker();
   setInterval(() => saveState(), 8000);
+  if (!state.tutorialSeen) setTimeout(() => showTutorial(false), 250);
   requestAnimationFrame(gameLoop);
 })();
