@@ -8,7 +8,7 @@
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1.5.0">
+  <link rel="stylesheet" href="style.css?v=2.0.0-build5">
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -17,7 +17,7 @@
         <img class="brand-logo" src="assets/icon.svg" alt="Le Comptoir des Mondes">
         <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small><span id="versionLabel">V1.5.0</span> · Taverne & cuisine</small>
+          <small><span id="versionLabel">V2.0.0</span> · Le domaine vivant</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
@@ -37,6 +37,7 @@
           <div class="mini-progress"><span id="activeGoalProgress"></span></div>
           <button id="goalShortcut" class="small-button" type="button">Voir</button>
         </div>
+        <div id="worldEventBanner" class="world-event-banner" hidden></div>
 
         <div class="world-card tavern-frame">
           <div class="tavern-toolbar">
@@ -101,6 +102,7 @@
           </div>
           <span id="kitchenSpeedLabel" class="badge">Vitesse normale</span>
         </div>
+        <div id="menuPlanner" class="menu-planner"></div>
         <div id="kitchenCapacitySummary" class="kitchen-summary"></div>
         <div id="cookingQueue" class="cooking-queue"></div>
         <div id="recipeGrid" class="card-grid"></div>
@@ -110,7 +112,7 @@
         <div class="section-header">
           <div>
             <h1>Régions & fournisseurs</h1>
-            <p>Les boutons de récolte sont provisoires : les futures zones seront de vrais lieux en 3/4.</p>
+            <p>Visite les fournisseurs, collecte sur place et développe chaque région.</p>
           </div>
           <span id="zoneProgressBadge" class="badge">1/4</span>
         </div>
@@ -123,12 +125,14 @@
           <button class="secondary-button" data-open-tab="counter" type="button">Retourner à la taverne</button>
         </div>
         <div id="farmSeeds" class="farm-seeds"></div>
+        <div id="farmSeedShop" class="farm-seed-shop"></div>
         <div class="farm-world">
           <img class="farm-scene" src="assets/regions/forest.png" alt="Jardin et terres du Comptoir">
           <div id="farmPlotGrid" class="farm-grid"></div>
           <div id="farmPlayer" class="farm-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
           <div id="farmChoicePanel" class="farm-choice-panel"></div>
         </div>
+        <div id="farmExpansionPanel" class="system-panel"></div>
       </section>
 
       <section id="tab-workshop" class="tab-panel" data-tab-panel="workshop">
@@ -138,16 +142,60 @@
         </div>
         <div class="workshop-world">
           <img class="workshop-scene" src="assets/regions/market.png" alt="Cour de fabrication du Comptoir">
-          <button class="workshop-zone wood-zone" data-open-tab="carpentry" type="button"><img src="assets/stations/workbench.png" alt=""><b>Menuiserie</b><small>Tables, chaises et plateaux</small></button>
-          <button class="workshop-zone machine-zone" data-open-tab="upgrades" type="button"><img src="assets/stations/craft_machine.png" alt=""><b>Machines</b><small>Fours et équipements</small></button>
-          <button class="workshop-zone tech-zone locked-zone" data-open-tab="upgrades" type="button"><img src="assets/stations/forge.png" alt=""><b>Technologies</b><small>Robots et automatisation à débloquer</small></button>
+          <button class="workshop-zone wood-zone" data-open-tab="carpentry" type="button"><img src="assets/stations/workbench.png" alt=""><b>Menuiserie</b><small>Meubles et décorations</small></button>
+          <button class="workshop-zone machine-zone" data-open-tab="industry" type="button"><img src="assets/stations/craft_machine.png" alt=""><b>Production</b><small>Matériaux et composants</small></button>
+          <button class="workshop-zone tech-zone" data-open-tab="technology" type="button"><img src="assets/stations/forge.png" alt=""><b>Technologies</b><small>Électricité, robots et IA</small></button>
           <div class="workshop-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
+        </div>
+        <div id="domainSummary" class="domain-summary"></div>
+        <div class="hub-link-grid">
+          <button class="hub-link" data-open-tab="upgrades" type="button"><img src="assets/stations/oven.png" alt=""><span><b>Salle des machines</b><small>Installer et améliorer les équipements</small></span></button>
+          <button class="hub-link" data-open-tab="staff" type="button"><img src="assets/npcs/tavern_worker_female_01.png" alt=""><span><b>Équipe</b><small>Recruter et affecter les employés</small></span></button>
+          <button class="hub-link" data-open-tab="shop" type="button"><img src="assets/stations/display_case.png" alt=""><span><b>Boutique</b><small>Produits emballés et souvenirs</small></span></button>
+          <button class="hub-link" data-open-tab="progress" type="button"><img src="assets/building/hanging_sign.png" alt=""><span><b>Domaine</b><small>Niveaux, établissements et statistiques</small></span></button>
         </div>
       </section>
 
       <section id="tab-carpentry" class="tab-panel" data-tab-panel="carpentry">
-        <div class="section-header"><div><h1>Salle de menuiserie</h1><p>Le futur espace de fabrication des tables, chaises, rangements et grands plateaux.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
-        <div class="specialist-room carpentry-room"><img src="assets/stations/workbench.png" alt="Établi de menuiserie"><div><h2>Établi principal</h2><p>Les recettes de mobilier seront ajoutées ici avec leurs coûts en planches, clous et composants.</p><button class="primary-button" data-open-tab="upgrades" type="button">Voir les améliorations disponibles</button></div></div>
+        <div class="section-header"><div><h1>Salle de menuiserie</h1><p>Transforme les matériaux en meubles réellement disponibles dans l’agencement.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
+        <div class="specialist-room carpentry-room"><img src="assets/stations/workbench.png" alt="Établi de menuiserie"><div><h2>Établi principal</h2><p>Tables, chaises, rangements, tapis et postes de travail sont fabriqués ici.</p><span id="carpentryLevelBadge" class="badge">Niveau 1</span></div></div>
+        <div id="carpentryQueue" class="production-queue"></div>
+        <div id="carpentryGrid" class="craft-grid"></div>
+      </section>
+
+      <section id="tab-industry" class="tab-panel" data-tab-panel="industry">
+        <div class="section-header"><div><h1>Salle de production</h1><p>Transforme les ressources brutes, fabrique les composants puis construis les machines.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
+        <div class="specialist-room industry-room"><img src="assets/stations/craft_machine.png" alt="Machine de production"><div><h2>Chaîne artisanale</h2><p>Les files, la vitesse et le rendement progressent avec les machines, l’équipe et les technologies.</p><span id="industryCapacityBadge" class="badge">1 file</span></div></div>
+        <div id="industryQueue" class="production-queue"></div>
+        <div id="industryFilters" class="filter-row"></div>
+        <div id="industryGrid" class="craft-grid"></div>
+      </section>
+
+      <section id="tab-staff" class="tab-panel" data-tab-panel="staff">
+        <div class="section-header"><div><h1>Équipe du Comptoir</h1><p>Recrute des spécialistes et choisis les automatisations qui restent actives.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour au domaine</button></div>
+        <div id="staffSummary" class="system-summary"></div>
+        <div id="staffGrid" class="staff-grid"></div>
+      </section>
+
+      <section id="tab-shop" class="tab-panel" data-tab-panel="shop">
+        <div class="section-header"><div><h1>Boutique attenante</h1><p>Transforme les surplus en produits emballés et vends-les depuis une vitrine personnalisable.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour au domaine</button></div>
+        <div id="shopSummary" class="system-summary"></div>
+        <div id="shopQueue" class="production-queue"></div>
+        <div id="shopProducts" class="shop-grid"></div>
+      </section>
+
+      <section id="tab-technology" class="tab-panel" data-tab-panel="technology">
+        <div class="section-header"><div><h1>Technologies du Comptoir</h1><p>Une progression tardive qui automatise les tâches répétitives sans supprimer les décisions.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
+        <div id="technologyGrid" class="tech-tree"></div>
+      </section>
+
+      <section id="tab-progress" class="tab-panel" data-tab-panel="progress">
+        <div class="section-header"><div><h1>Progression du domaine</h1><p>Développe chaque activité et ouvre de nouveaux établissements sans remise à zéro.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour au domaine</button></div>
+        <div id="masteryGrid" class="mastery-grid"></div>
+        <h2>Établissements</h2>
+        <div id="establishmentGrid" class="establishment-grid"></div>
+        <h2>Statistiques</h2>
+        <div id="expandedStats" class="stats-grid"></div>
       </section>
 
       <section id="tab-upgrades" class="tab-panel" data-tab-panel="upgrades">
@@ -281,9 +329,11 @@
     <nav class="bottom-nav" aria-label="Navigation principale">
       <button class="nav-button active" data-tab="counter" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Taverne</small></button>
       <button class="nav-button" data-tab="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Cuisine</small></button>
+      <button class="nav-button" data-tab="workshop" type="button"><img src="assets/stations/workbench.png" alt=""><small>Domaine</small></button>
       <button class="nav-button" data-tab="farm" type="button"><img src="assets/food/vegetables_bundle.png" alt=""><small>Ferme</small></button>
       <button class="nav-button" data-tab="zones" type="button"><img src="assets/building/hanging_sign.png" alt=""><small>Régions</small></button>
-      <button class="nav-button" data-tab="upgrades" type="button"><img src="assets/stations/craft_machine.png" alt=""><small>Machines</small></button>
+      <button class="nav-button" data-tab="staff" type="button"><img src="assets/npcs/tavern_worker_female_01.png" alt=""><small>Équipe</small></button>
+      <button class="nav-button" data-tab="shop" type="button"><img src="assets/stations/display_case.png" alt=""><small>Boutique</small></button>
       <button class="nav-button" data-tab="collections" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Collections</small></button>
       <button class="nav-button" data-tab="minigame" type="button"><img src="assets/furniture/basket.png" alt=""><small>Bonus</small></button>
       <button class="nav-button" data-tab="objectives" type="button"><img src="assets/furniture/chalkboard_sign.png" alt=""><small>Quêtes</small></button>
@@ -294,6 +344,7 @@
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=1.5.0"></script>
+  <script src="app.js?v=2.0.0-build5"></script>
+  <script src="expansion.js?v=2.0.0-build5"></script>
 </body>
 </html>

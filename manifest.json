@@ -1,7 +1,7 @@
 {
-  "name": "Le Comptoir des Mondes — Taverne & Atelier",
+  "name": "Le Comptoir des Mondes — Domaine vivant",
   "short_name": "Comptoir",
-  "description": "Jeu cosy de craft, de taverne et de collections en pixel art.",
+  "description": "Jeu cosy de taverne, cuisine, ferme, artisanat et exploration en pixel art.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

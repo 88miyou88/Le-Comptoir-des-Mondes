@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.5.0';
-  const SAVE_VERSION = 1;
+  const GAME_VERSION = '2.0.0';
+  const SAVE_VERSION = 2;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
 
@@ -222,10 +222,21 @@
     farm_plot_5: 'vegetables', farm_plot_6: 'fruits', farm_auto: 'craft_machine'
   };
   const FURNITURE = {
-    table_round: { id: 'table_round', name: 'Table ronde', asset: 'table_round' },
-    chair: { id: 'chair', name: 'Chaise', asset: 'chair' },
-    shelf: { id: 'shelf', name: 'Étagère', asset: 'shelf' },
-    chest: { id: 'chest', name: 'Petit coffre', asset: 'storage_chest' }
+    table_round: { id: 'table_round', name: 'Table ronde', asset: 'table_round', radius: .075 },
+    table_square: { id: 'table_square', name: 'Table carrée', asset: 'table_square', radius: .075 },
+    chair: { id: 'chair', name: 'Chaise', asset: 'chair', radius: .035 },
+    shelf: { id: 'shelf', name: 'Étagère', asset: 'shelf', radius: .055 },
+    chest: { id: 'chest', name: 'Petit coffre', asset: 'storage_chest', radius: .05 },
+    plant: { id: 'plant', name: 'Plante en pot', asset: 'flowers', radius: .035 },
+    rug_green: { id: 'rug_green', name: 'Tapis vert', asset: 'rug_green', radius: .07 },
+    rug_red: { id: 'rug_red', name: 'Tapis rouge', asset: 'rug_red', radius: .07 },
+    barrel: { id: 'barrel', name: 'Tonneau', asset: 'barrel', radius: .045 },
+    workbench_station: { id: 'workbench_station', name: 'Établi', asset: 'workbench', radius: .065 },
+    oven_station: { id: 'oven_station', name: 'Four', asset: 'oven', radius: .065 },
+    coffee_station: { id: 'coffee_station', name: 'Machine à café', asset: 'coffee_machine', radius: .055 },
+    display_station: { id: 'display_station', name: 'Vitrine', asset: 'display_case', radius: .07 },
+    forge_station: { id: 'forge_station', name: 'Forge', asset: 'forge', radius: .07 },
+    craft_station: { id: 'craft_station', name: 'Machine de craft', asset: 'craft_machine', radius: .07 }
   };
   const LAYOUT_SLOTS = [
     { x: .30, y: .49 }, { x: .40, y: .49 }, { x: .50, y: .49 }, { x: .60, y: .49 }, { x: .70, y: .49 },
@@ -288,7 +299,7 @@
       tutorialSeen: false,
       restaurantOpen: true,
       farm: { seeds: { vegetables: 4, fruits: 3, spices: 3 }, plots: [null, null, null, null], player: { x: .50, y: .82 }, lastAutoPlantAt: 0 },
-      decorInventory: { table_round: 1, chair: 2, shelf: 1, chest: 1 },
+      decorInventory: { table_round: 1, table_square: 0, chair: 2, shelf: 1, chest: 1, plant: 0, rug_green: 0, rug_red: 0, barrel: 0, workbench_station: 0, oven_station: 0, coffee_station: 0, display_station: 0, forge_station: 0, craft_station: 0 },
       placedFurniture: DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }))
     };
   }
@@ -305,7 +316,10 @@
   let mini = null;
   let layoutEditing = false;
   let selectedFurnitureId = null;
+  let selectedFurnitureRotation = 0;
+  let layoutHistory = [];
   let selectedFarmPlot = null;
+  let expansionErrorShown = false;
 
   const el = id => document.getElementById(id);
   const fmt = n => Math.floor(Number(n || 0)).toLocaleString('fr-FR');
@@ -336,7 +350,7 @@
       zoneXP: { ...base.zoneXP, ...(raw.zoneXP || {}) },
       cooldowns: { ...(raw.cooldowns || {}) },
       minigame: { ...base.minigame, ...(raw.minigame || {}) },
-      farm: { ...base.farm, ...(raw.farm || {}), seeds: { ...base.farm.seeds, ...(raw.farm?.seeds || {}) }, player: { ...base.farm.player, ...(raw.farm?.player || {}) }, plots: Array.isArray(raw.farm?.plots) ? raw.farm.plots.slice(0, 6) : base.farm.plots },
+      farm: { ...base.farm, ...(raw.farm || {}), seeds: { ...base.farm.seeds, ...(raw.farm?.seeds || {}) }, player: { ...base.farm.player, ...(raw.farm?.player || {}) }, plots: Array.isArray(raw.farm?.plots) ? raw.farm.plots.slice(0, 8) : base.farm.plots },
       decorInventory: { ...base.decorInventory, ...(raw.decorInventory || {}) },
       placedFurniture: Array.isArray(raw.placedFurniture) ? raw.placedFurniture : base.placedFurniture
     };
@@ -347,7 +361,7 @@
       .map(item => {
         const legacy = LAYOUT_SLOTS[item.slotIndex] || { x: item.x, y: item.y };
         const point = floorPoint(item.x ?? legacy.x, item.y ?? legacy.y);
-        return { uid: item.uid || `${item.furnitureId}-${Date.now()}-${Math.random()}`, furnitureId: item.furnitureId, x: point.x, y: point.y };
+        return { uid: item.uid || `${item.furnitureId}-${Date.now()}-${Math.random()}`, furnitureId: item.furnitureId, x: point.x, y: point.y, rotation: Number(item.rotation || 0) };
       });
     if (!merged.placedFurniture.length) merged.placedFurniture = DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }));
     merged.saveVersion = SAVE_VERSION;
@@ -431,13 +445,16 @@
   function showTutorial(force = false) {
     if (!force && state.tutorialSeen) return;
     const html = `
-      <p>Le jeu est maintenant organisé autour de la préparation et du craft.</p>
+      <p>Le Comptoir est maintenant un domaine complet : cuisine, ferme, fabrication, équipe, boutique et exploration se répondent.</p>
       <div class="tutorial-steps">
         <div class="tutorial-step"><div class="tutorial-num">1</div><div><b>Ferme la taverne pour préparer</b><small>Le bouton au-dessus de la salle permet d'ouvrir ou fermer la taverne. Fermée, aucun client n'arrive et rien ne presse.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Prépare ton stock</b><small>Utilise la cuisine ouverte sur la salle pour transformer tes ingrédients en plats. Les futures versions ajouteront le craft de meubles, outils et machines dans leurs salles dédiées.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Prépare ton stock</b><small>Utilise la cuisine ouverte sur la salle : les commandes restent visibles pendant la préparation.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">3</div><div><b>Ouvre quand tu es prête</b><small>Quand plusieurs plats sont prêts, ouvre la taverne. Les clients arrivent et demandent une recette précise.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">4</div><div><b>Déplace-toi et sers</b><small>Touche le sol pour déplacer ton personnage, puis touche un client pour lui apporter le plat correspondant.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Utilise les régions et le bonus</b><small>Les régions fournissent provisoirement les ressources par boutons. Le mini-jeu Bonus reste accessible à tout moment.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Cultive la ferme</b><small>Achète des graines, plante les parcelles et récolte les ingrédients nécessaires à la cuisine et à la boutique.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">6</div><div><b>Développe le domaine</b><small>La cour mène à la menuiserie, à la production, aux machines et aux technologies. Chaque meuble fabriqué rejoint l’agencement.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">7</div><div><b>Recrute sans perdre le contrôle</b><small>Les employés et robots automatisent seulement les tâches que tu choisis de leur confier.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">8</div><div><b>Explore et progresse</b><small>Visite les régions, complète les collections, ouvre une boutique et développe plusieurs établissements sans remise à zéro.</small></div></div>
       </div>`;
     showModal('Bienvenue au Comptoir', html, [
       { label: 'J’ai compris', className: 'primary-button', action: () => { state.tutorialSeen = true; saveState(); } }
@@ -482,10 +499,10 @@
     const usableSeats = getUsableSeats().length;
     return {
       maxCustomers: Math.min(Math.max(1, usableSeats), 2 + (hasUpgrade(state, 'counter_2') ? 1 : 0) + (hasUpgrade(state, 'counter_3') ? 1 : 0) + (hasUpgrade(state, 'counter_4') ? 2 : 0)),
-      trayCapacity: 1 + (hasUpgrade(state, 'wood_tray') ? 1 : 0) + (hasUpgrade(state, 'strong_tray') ? 1 : 0),
-      cookingSlots: 1 + (hasUpgrade(state, 'shelf') ? 1 : 0),
-      prepMultiplier: (hasUpgrade(state, 'cutting_board') ? 0.9 : 1) * (hasCollection('utensils') ? 0.95 : 1) * (Date.now() < state.boosts.kitchenUntil ? 0.65 : 1),
-      coinMultiplier: (hasUpgrade(state, 'register') ? 1.08 : 1) * (Date.now() < state.boosts.generousUntil ? 1.2 : 1),
+      trayCapacity: 1 + (hasUpgrade(state, 'wood_tray') ? 1 : 0) + (hasUpgrade(state, 'strong_tray') ? 1 : 0) + (state.expansion?.tech?.includes('smart_storage') ? 2 : 0),
+      cookingSlots: 1 + (hasUpgrade(state, 'shelf') ? 1 : 0) + (state.expansion?.tech?.includes('smart_storage') ? 1 : 0),
+      prepMultiplier: (hasUpgrade(state, 'cutting_board') ? 0.9 : 1) * (hasCollection('utensils') ? 0.95 : 1) * (Date.now() < state.boosts.kitchenUntil ? 0.65 : 1) * (1 - Math.min(.2, ((state.expansion?.mastery?.kitchen?.level || 1) - 1) * .025)),
+      coinMultiplier: (hasUpgrade(state, 'register') ? 1.08 : 1) * (Date.now() < state.boosts.generousUntil ? 1.2 : 1) * (1 + Math.min(.2, ((state.expansion?.mastery?.tavern?.level || 1) - 1) * .02)),
       repMultiplier: (hasUpgrade(state, 'counter_4') ? 1.05 : 1) * (hasCollection('souvenirs') ? 1.05 : 1),
       dessertMultiplier: (hasUpgrade(state, 'display_case') ? 1.1 : 1) * (hasCollection('rare_fruits') ? 1.1 : 1),
       gatherBonusChance: hasUpgrade(state, 'better_tools') ? 0.35 : 0,
@@ -522,7 +539,7 @@
   }
 
   function getUsableSeats() {
-    const tables = state.placedFurniture.filter(item => item.furnitureId === 'table_round');
+    const tables = state.placedFurniture.filter(item => ['table_round', 'table_square'].includes(item.furnitureId));
     return state.placedFurniture.filter(item => item.furnitureId === 'chair' && tables.some(table => Math.hypot(table.x - item.x, table.y - item.y) <= .18));
   }
 
@@ -543,6 +560,8 @@
   }
 
   function getMetricValue(metric) {
+    const expansionMetric = window.ComptoirExpansion?.getMetric?.(metric);
+    if (expansionMetric !== undefined) return expansionMetric;
     if (metric === 'reputation') return state.reputation;
     if (metric === 'zonesUnlocked') return state.unlockedZones.length;
     if (metric === 'upgradesBought') return state.upgrades.length;
@@ -601,6 +620,8 @@
   function toggleLayoutEditor() {
     layoutEditing = !layoutEditing;
     selectedFurnitureId = null;
+    selectedFurnitureRotation = 0;
+    layoutHistory = [];
     el('layoutEditorPanel').hidden = !layoutEditing;
     el('layoutGrid').hidden = !layoutEditing;
     if (layoutEditing) {
@@ -615,9 +636,40 @@
     renderAll();
   }
 
+  function rememberLayout() {
+    layoutHistory.push({
+      placedFurniture: state.placedFurniture.map(item => ({ ...item })),
+      decorInventory: { ...state.decorInventory }
+    });
+    if (layoutHistory.length > 20) layoutHistory.shift();
+  }
+
+  function undoLayout() {
+    const previous = layoutHistory.pop();
+    if (!previous) return toast('Aucune action à annuler.');
+    state.placedFurniture = previous.placedFurniture;
+    state.decorInventory = previous.decorInventory;
+    saveState();
+    renderAll();
+    toast('Dernière action annulée.');
+  }
+
+  function storeAllFurniture() {
+    if (!state.placedFurniture.length) return;
+    rememberLayout();
+    state.placedFurniture.forEach(item => {
+      state.decorInventory[item.furnitureId] = (state.decorInventory[item.furnitureId] || 0) + 1;
+    });
+    state.placedFurniture = [];
+    saveState();
+    renderAll();
+    toast('Tous les meubles ont été rangés.');
+  }
+
   function removeFurniture(itemUniqueId) {
     const index = state.placedFurniture.findIndex(item => item.uid === itemUniqueId);
     if (index < 0) return;
+    rememberLayout();
     const [item] = state.placedFurniture.splice(index, 1);
     state.decorInventory[item.furnitureId] = (state.decorInventory[item.furnitureId] || 0) + 1;
     saveState();
@@ -632,7 +684,11 @@
       return;
     }
     const point = floorPoint(x, y);
-    if (state.placedFurniture.some(item => Math.hypot(item.x - point.x, item.y - point.y) < .075)) {
+    const selectedRadius = FURNITURE[selectedFurnitureId]?.radius || .05;
+    if (state.placedFurniture.some(item => {
+      const radius = FURNITURE[item.furnitureId]?.radius || .05;
+      return Math.hypot(item.x - point.x, item.y - point.y) < (selectedRadius + radius) * .62;
+    })) {
       toast('Un meuble est trop proche de cet endroit.');
       return;
     }
@@ -640,12 +696,14 @@
       toast("Tu n'as plus cet objet à poser.");
       return;
     }
+    rememberLayout();
     state.decorInventory[selectedFurnitureId] -= 1;
     state.placedFurniture.push({
       uid: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
       furnitureId: selectedFurnitureId,
       x: point.x,
-      y: point.y
+      y: point.y,
+      rotation: selectedFurnitureRotation
     });
     saveState();
     renderAll();
@@ -670,13 +728,14 @@
       node.style.top = `${point.y * 100}%`;
       const furnitureDepth = 5 + Math.round(point.y * 100);
       node.style.zIndex = String(!layoutEditing && item.furnitureId === 'chair' ? furnitureDepth + 30 : furnitureDepth);
-      node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}">`;
+      node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}" style="transform:rotate(${Number(item.rotation || 0)}deg)">`;
       if (layoutEditing) {
         node.title = `${furn.name} — toucher pour déplacer`;
         node.classList.add('selected-item');
         node.addEventListener('pointerdown', event => {
           event.stopPropagation();
           selectedFurnitureId = item.furnitureId;
+          selectedFurnitureRotation = Number(item.rotation || 0);
           removeFurniture(item.uid);
         });
       }
@@ -695,7 +754,7 @@
     panel.innerHTML = `
       <h3>Agencement libre</h3>
       <p>Choisis un meuble, puis touche librement le plancher pour le poser. La zone éclairée indique les limites du sol. Touche un meuble posé pour le déplacer.</p>
-      <div class="layout-chip">Sélection : <b>${selected}</b></div>
+      <div class="layout-chip">Sélection : <b>${selected}</b>${selectedFurnitureId ? ` · ${selectedFurnitureRotation}°` : ''}</div>
       <div class="layout-palette">
         ${Object.values(FURNITURE).map(item => `
           <button type="button" class="layout-card ${selectedFurnitureId === item.id ? 'active' : ''}" data-layout-item="${item.id}">
@@ -705,19 +764,30 @@
           </button>`).join('')}
       </div>
       <div class="layout-controls">
+        <button type="button" id="rotateLayoutSelection" class="secondary-button" ${selectedFurnitureId ? '' : 'disabled'}>Tourner</button>
+        <button type="button" id="undoLayoutAction" class="secondary-button" ${layoutHistory.length ? '' : 'disabled'}>Annuler</button>
+        <button type="button" id="storeAllFurniture" class="secondary-button">Tout ranger</button>
         <button type="button" id="clearLayoutSelection" class="secondary-button">Effacer la sélection</button>
       </div>
     `;
     panel.querySelectorAll('[data-layout-item]').forEach(button => button.addEventListener('click', () => {
       selectedFurnitureId = button.dataset.layoutItem;
+      selectedFurnitureRotation = 0;
       renderLayoutEditor();
       renderFurnitureLayer();
     }));
     panel.querySelector('#clearLayoutSelection')?.addEventListener('click', () => {
       selectedFurnitureId = null;
+      selectedFurnitureRotation = 0;
       renderLayoutEditor();
       renderFurnitureLayer();
     });
+    panel.querySelector('#rotateLayoutSelection')?.addEventListener('click', () => {
+      selectedFurnitureRotation = (selectedFurnitureRotation + 90) % 360;
+      renderLayoutEditor();
+    });
+    panel.querySelector('#undoLayoutAction')?.addEventListener('click', undoLayout);
+    panel.querySelector('#storeAllFurniture')?.addEventListener('click', storeAllFurniture);
   }
 
   function discardTrayRecipe(recipeId) {
@@ -739,6 +809,18 @@
       return;
     }
     serveCustomer(customer.id);
+  }
+
+  function sellStockRecipe(recipeId) {
+    pullReadyCookingToTray(false);
+    const index = state.tray.indexOf(recipeId);
+    const recipe = getRecipe(recipeId);
+    if (index < 0 || !recipe) return;
+    state.tray.splice(index, 1);
+    const value = Math.max(1, Math.floor(recipe.price * .45));
+    state.coins += value;
+    state.stats.coinsEarned += value;
+    saveState(); renderAll(); toast(`${recipe.name} vendu à prix réduit : +${value} pièces.`);
   }
 
   function getReadyRecipeCount(recipeId) {
@@ -850,7 +932,7 @@
     tray.innerHTML = Object.entries(counts).map(([recipeId, count]) => {
       const recipe = getRecipe(recipeId);
       const ordered = state.customers.some(customer => customer.recipeId === recipeId);
-      return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}<span class="tray-actions"><button class="small-button serve-stock" data-recipe-id="${recipe.id}" type="button" ${ordered ? '' : 'disabled'}>${ordered ? 'Servir' : 'En attente'}</button><button class="mini-icon-button discard-chip" data-recipe-id="${recipe.id}" type="button" title="Jeter ce plat">🗑️</button></span></div>`;
+      return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}<span class="tray-actions"><button class="small-button serve-stock" data-recipe-id="${recipe.id}" data-stock-action="${ordered ? 'serve' : 'sell'}" type="button">${ordered ? 'Servir' : 'Vendre'}</button><button class="mini-icon-button discard-chip" data-recipe-id="${recipe.id}" type="button" title="Jeter ce plat">🗑️</button></span></div>`;
     }).join('');
     tray.querySelectorAll('.discard-chip').forEach(button => button.addEventListener('click', event => {
       event.stopPropagation();
@@ -858,7 +940,8 @@
     }));
     tray.querySelectorAll('.serve-stock').forEach(button => button.addEventListener('click', event => {
       event.stopPropagation();
-      serveStockRecipe(button.dataset.recipeId);
+      if (button.dataset.stockAction === 'serve') serveStockRecipe(button.dataset.recipeId);
+      else sellStockRecipe(button.dataset.recipeId);
     }));
   }
 
@@ -1000,8 +1083,9 @@
 
   function chooseRecipeForClient(type) {
     const unlocked = getUnlockedRecipes();
-    const filtered = type.recipes ? unlocked.filter(r => type.recipes.includes(r.id)) : unlocked;
-    return choice(filtered.length ? filtered : unlocked);
+    const planned = Array.isArray(state.expansion?.menu) && state.expansion.menu.length ? unlocked.filter(recipe => state.expansion.menu.includes(recipe.id)) : unlocked;
+    const filtered = type.recipes ? planned.filter(r => type.recipes.includes(r.id)) : planned;
+    return choice(filtered.length ? filtered : planned.length ? planned : unlocked);
   }
 
   function spawnCustomer() {
@@ -1095,17 +1179,17 @@
       const xp = state.zoneXP[zone.id] || 0;
       const level = Math.floor(xp / 25) + 1;
       const pct = (xp % 25) / 25 * 100;
-      const nodes = unlocked ? `<div class="gather-area">${zone.nodes.map((node, index) => {
+      const nodes = unlocked ? `<div class="gather-area region-node-layer">${zone.nodes.map((node, index) => {
         const key = `${zone.id}:${index}`;
         const cooling = (state.cooldowns[key] || 0) > Date.now();
         return `<button class="gather-button ${cooling ? 'cooling' : ''}" data-zone="${zone.id}" data-node="${index}" type="button" ${cooling ? 'disabled' : ''}>${itemImg(node.item, 'pixel-card-icon')}<small>${node.label}</small></button>`;
       }).join('')}</div>` : '';
       const materialCosts = Object.fromEntries(Object.entries(zone.unlockCost).filter(([k]) => k !== 'coins'));
       return `<article class="zone-card ${unlocked ? '' : 'locked'}">
-        <div class="zone-art ${zone.className}"><img class="zone-scene" src="${assetPath(ZONE_ART[zone.id])}" alt="${zone.name}"><span class="badge">${unlocked ? `Niv. ${level}` : `${zone.repNeed} ⭐`}</span></div>
+        <div class="zone-art ${zone.className}"><img class="zone-scene" src="${assetPath(ZONE_ART[zone.id])}" alt="${zone.name}"><span class="badge">${unlocked ? `Niv. ${level}` : `${zone.repNeed} ⭐`}</span>${nodes}<img class="region-player" src="${assetPath('player_idle')}" alt="Votre personnage"></div>
         <div class="zone-body">
           <h2>${zone.name}</h2><p>${zone.description}</p>
-          ${unlocked ? `<div class="zone-meter"><span style="width:${pct}%"></span></div><small>${xp % 25}/25 passages avant le niveau fournisseur suivant</small>${nodes}` : `<div class="cost-row"><span class="resource-chip">🪙 ${fmt(zone.unlockCost.coins || 0)}</span>${materialChips(materialCosts)}</div><button class="primary-button wide unlock-zone" data-zone="${zone.id}" type="button" ${repOk && costOk ? '' : 'disabled'}>${repOk ? 'Débloquer la zone' : `Il faut ${zone.repNeed} réputation`}</button>`}
+          ${unlocked ? `<div class="zone-meter"><span style="width:${pct}%"></span></div><small>${xp % 25}/25 passages avant le niveau fournisseur suivant</small><p class="scene-help">Touche un fournisseur ou une ressource directement dans le lieu.</p>` : `<div class="cost-row"><span class="resource-chip">🪙 ${fmt(zone.unlockCost.coins || 0)}</span>${materialChips(materialCosts)}</div><button class="primary-button wide unlock-zone" data-zone="${zone.id}" type="button" ${repOk && costOk ? '' : 'disabled'}>${repOk ? 'Débloquer la zone' : `Il faut ${zone.repNeed} réputation`}</button>`}
         </div>
       </article>`;
     }).join('');
@@ -1124,7 +1208,7 @@
   ];
 
   function getFarmCapacity() {
-    return 4 + (hasUpgrade(state, 'farm_plot_5') ? 1 : 0) + (hasUpgrade(state, 'farm_plot_6') ? 1 : 0);
+    return Math.min(8, 4 + (hasUpgrade(state, 'farm_plot_5') ? 1 : 0) + (hasUpgrade(state, 'farm_plot_6') ? 1 : 0) + Number(state.expansion?.farmExtraPlots || 0));
   }
 
   function farmPlotState(plot) {
@@ -1157,8 +1241,10 @@
     const plot = state.farm.plots[index];
     const plotState = farmPlotState(plot);
     if (plotState.status !== 'ready') return;
-    const amount = randomInt(...plotState.crop.yield);
+    const masteryBonus = Math.floor(((state.expansion?.mastery?.farm?.level || 1) - 1) / 3);
+    const amount = randomInt(...plotState.crop.yield) + masteryBonus;
     addResource(plot.cropId, amount);
+    if (state.expansion?.stats) state.expansion.stats.harvested = (state.expansion.stats.harvested || 0) + 1;
     if (Math.random() < .65) state.farm.seeds[plot.cropId] += 1;
     state.farm.plots[index] = null;
     saveState(); renderAll(); toast(`Récolte : +${amount} ${plotState.crop.name.toLowerCase()}.`);
@@ -1759,6 +1845,12 @@
     if (currentTab === 'kitchen') renderKitchen();
     if (currentTab === 'farm') renderFarm();
     if (currentTab === 'settings') renderChest();
+    try {
+      window.ComptoirExpansion?.tick?.();
+    } catch (error) {
+      console.error('Erreur de système étendu', error);
+      if (!expansionErrorShown) { expansionErrorShown = true; toast(`Un système secondaire a été suspendu : ${error.message}`); }
+    }
   }
 
   function gameLoop(now) {
@@ -1790,7 +1882,23 @@
     renderObjectives();
     renderSettings();
     if (mini) renderMini();
+    try {
+      window.ComptoirExpansion?.renderAll?.();
+    } catch (error) {
+      console.error('Erreur de rendu étendu', error);
+      if (!expansionErrorShown) { expansionErrorShown = true; toast(`Un panneau secondaire n’a pas pu s’afficher : ${error.message}`); }
+    }
   }
+
+  window.ComptoirCore = {
+    get state() { return state; },
+    get currentTab() { return currentTab; },
+    GAME_VERSION, SAVE_VERSION, ITEMS, RECIPES, ZONES, UPGRADES, OBJECTIVES, COLLECTIONS, FURNITURE, ASSET_PATHS, ITEM_ASSETS, RECIPE_ASSETS, ZONE_ART, FARM_CROPS, FARM_PLOT_POSITIONS,
+    el, fmt, clamp, randomInt, choice, assetPath, pixelImg, itemImg, recipeImg,
+    saveState, toast, showModal, closeModal, switchTab, renderAll, renderFarm, renderZones, renderFurnitureLayer,
+    addResource, grantReward, rewardHtml, canPay, pay, materialChips, hasUpgrade, getEffects, getRecipe,
+    startCooking, serveCustomer, pullReadyCookingToTray, getFarmCapacity, farmPlotState, harvestCrop
+  };
 
   function attachEvents() {
     document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.tab)));
