@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.4.0';
+  const GAME_VERSION = '1.5.0';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -434,7 +434,7 @@
       <p>Le jeu est maintenant organisé autour de la préparation et du craft.</p>
       <div class="tutorial-steps">
         <div class="tutorial-step"><div class="tutorial-num">1</div><div><b>Ferme la taverne pour préparer</b><small>Le bouton au-dessus de la salle permet d'ouvrir ou fermer la taverne. Fermée, aucun client n'arrive et rien ne presse.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Fabrique ton stock</b><small>Va dans Atelier pour transformer tes ingrédients en plats. Les futures versions ajouteront le vrai craft de meubles, outils et machines.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Prépare ton stock</b><small>Utilise la cuisine ouverte sur la salle pour transformer tes ingrédients en plats. Les futures versions ajouteront le craft de meubles, outils et machines dans leurs salles dédiées.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">3</div><div><b>Ouvre quand tu es prête</b><small>Quand plusieurs plats sont prêts, ouvre la taverne. Les clients arrivent et demandent une recette précise.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">4</div><div><b>Déplace-toi et sers</b><small>Touche le sol pour déplacer ton personnage, puis touche un client pour lui apporter le plat correspondant.</small></div></div>
         <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Utilise les régions et le bonus</b><small>Les régions fournissent provisoirement les ressources par boutons. Le mini-jeu Bonus reste accessible à tout moment.</small></div></div>
@@ -495,14 +495,30 @@
     };
   }
 
+  function floorBounds(y) {
+    const bound = (value, min, max) => Math.max(min, Math.min(max, value));
+    const cleanY = bound(Number(y) || .62, .42, .88);
+    const upper = cleanY <= .66;
+    const progress = upper ? (cleanY - .42) / .24 : (cleanY - .66) / .22;
+    return {
+      y: cleanY,
+      minX: upper ? .28 - progress * .18 : .10 + progress * .14,
+      maxX: upper ? .72 + progress * .18 : .90 - progress * .14
+    };
+  }
+
+  function isOnFloor(x, y) {
+    const numericX = Number(x);
+    const numericY = Number(y);
+    if (!Number.isFinite(numericX) || !Number.isFinite(numericY) || numericY < .42 || numericY > .88) return false;
+    const bounds = floorBounds(numericY);
+    return numericX >= bounds.minX && numericX <= bounds.maxX;
+  }
+
   function floorPoint(x, y) {
     const bound = (value, min, max) => Math.max(min, Math.min(max, value));
-    const cleanY = bound(Number(y) || .62, .49, .72);
-    const upper = cleanY <= .62;
-    const progress = upper ? (cleanY - .49) / .13 : (cleanY - .62) / .10;
-    const minX = upper ? .28 - progress * .12 : .16 + progress * .12;
-    const maxX = upper ? .72 + progress * .12 : .84 - progress * .12;
-    return { x: bound(Number(x) || .5, minX, maxX), y: cleanY };
+    const bounds = floorBounds(y);
+    return { x: bound(Number(x) || .5, bounds.minX, bounds.maxX), y: bounds.y };
   }
 
   function getUsableSeats() {
@@ -611,6 +627,10 @@
 
   function placeFurnitureAt(x, y) {
     if (!layoutEditing || !selectedFurnitureId) return;
+    if (!isOnFloor(x, y)) {
+      toast('Pose ce meuble à l’intérieur des limites du plancher.');
+      return;
+    }
     const point = floorPoint(x, y);
     if (state.placedFurniture.some(item => Math.hypot(item.x - point.x, item.y - point.y) < .075)) {
       toast('Un meuble est trop proche de cet endroit.');
@@ -648,7 +668,8 @@
       node.className = `furniture-item ${item.furnitureId}`;
       node.style.left = `${point.x * 100}%`;
       node.style.top = `${point.y * 100}%`;
-      node.style.zIndex = String(5 + Math.round(point.y * 100));
+      const furnitureDepth = 5 + Math.round(point.y * 100);
+      node.style.zIndex = String(!layoutEditing && item.furnitureId === 'chair' ? furnitureDepth + 30 : furnitureDepth);
       node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}">`;
       if (layoutEditing) {
         node.title = `${furn.name} — toucher pour déplacer`;
@@ -663,22 +684,6 @@
     });
     grid.hidden = !layoutEditing;
     grid.innerHTML = '';
-    if (layoutEditing) {
-      LAYOUT_SLOTS.forEach((slot, index) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'layout-slot';
-        if (selectedFurnitureId) button.classList.add('selected');
-        button.style.left = `${slot.x * 100}%`;
-        button.style.top = `${slot.y * 100}%`;
-        button.style.zIndex = String(4 + Math.round(slot.y * 100));
-        button.addEventListener('pointerdown', event => {
-          event.stopPropagation();
-          placeFurnitureAt(slot.x, slot.y);
-        });
-        grid.appendChild(button);
-      });
-    }
   }
 
   function renderLayoutEditor() {
@@ -689,7 +694,7 @@
     const selected = selectedFurnitureId ? FURNITURE[selectedFurnitureId]?.name : 'aucun';
     panel.innerHTML = `
       <h3>Agencement libre</h3>
-      <p>Choisis un meuble, puis touche n’importe quel endroit du plancher pour le poser. Les points servent seulement de repères. Touche un meuble posé pour le déplacer.</p>
+      <p>Choisis un meuble, puis touche librement le plancher pour le poser. La zone éclairée indique les limites du sol. Touche un meuble posé pour le déplacer.</p>
       <div class="layout-chip">Sélection : <b>${selected}</b></div>
       <div class="layout-palette">
         ${Object.values(FURNITURE).map(item => `
@@ -724,6 +729,16 @@
     saveState();
     renderAll();
     toast(`${recipe.name} jeté à la poubelle.`);
+  }
+
+  function serveStockRecipe(recipeId) {
+    pullReadyCookingToTray(false);
+    const customer = state.customers.find(item => item.recipeId === recipeId);
+    if (!customer) {
+      toast('Aucun client ne commande ce plat pour le moment.');
+      return;
+    }
+    serveCustomer(customer.id);
   }
 
   function getReadyRecipeCount(recipeId) {
@@ -767,7 +782,7 @@
 
   function customerSlot(index) {
     const seats = getUsableSeats();
-    const slots = seats.length ? seats.map(seat => floorPoint(seat.x, seat.y - .025)) : [{ x: .56, y: .66 }];
+    const slots = seats.length ? seats.map(seat => floorPoint(seat.x, seat.y + .018)) : [{ x: .56, y: .66 }];
     return slots[index % slots.length];
   }
 
@@ -834,11 +849,16 @@
     tray.className = 'ready-tray';
     tray.innerHTML = Object.entries(counts).map(([recipeId, count]) => {
       const recipe = getRecipe(recipeId);
-      return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}<span class="tray-actions"><button class="mini-icon-button discard-chip" data-recipe-id="${recipe.id}" type="button" title="Jeter ce plat">🗑️</button></span></div>`;
+      const ordered = state.customers.some(customer => customer.recipeId === recipeId);
+      return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}<span class="tray-actions"><button class="small-button serve-stock" data-recipe-id="${recipe.id}" type="button" ${ordered ? '' : 'disabled'}>${ordered ? 'Servir' : 'En attente'}</button><button class="mini-icon-button discard-chip" data-recipe-id="${recipe.id}" type="button" title="Jeter ce plat">🗑️</button></span></div>`;
     }).join('');
     tray.querySelectorAll('.discard-chip').forEach(button => button.addEventListener('click', event => {
       event.stopPropagation();
       discardTrayRecipe(button.dataset.recipeId);
+    }));
+    tray.querySelectorAll('.serve-stock').forEach(button => button.addEventListener('click', event => {
+      event.stopPropagation();
+      serveStockRecipe(button.dataset.recipeId);
     }));
   }
 
@@ -891,6 +911,27 @@
       </article>`;
     }).join('');
     grid.querySelectorAll('.cook-button').forEach(button => button.addEventListener('click', () => startCooking(button.dataset.recipeId)));
+  }
+
+  function renderCounterKitchen() {
+    const queue = el('counterCookingQueue');
+    const grid = el('counterRecipeGrid');
+    const capacity = el('counterKitchenCapacity');
+    if (!queue || !grid || !capacity) return;
+    pullReadyCookingToTray(false);
+    const effects = getEffects();
+    capacity.textContent = `${state.cooking.length}/${effects.cookingSlots} préparation(s)`;
+    queue.innerHTML = state.cooking.length ? state.cooking.map(item => {
+      const recipe = getRecipe(item.recipeId);
+      const left = Math.max(0, item.readyAt - Date.now());
+      return `<span class="counter-cooking-chip">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b><small>${left ? `${Math.ceil(left / 1000)} s` : 'Prêt'}</small></span>`;
+    }).join('') : '<small class="empty-inline">Aucune préparation en cours.</small>';
+    grid.innerHTML = getUnlockedRecipes().map(recipe => {
+      const canCookNow = canCookRecipe(recipe) && state.cooking.length < effects.cookingSlots;
+      const requested = state.customers.some(customer => customer.recipeId === recipe.id);
+      return `<button class="counter-recipe-button ${requested ? 'requested' : ''}" data-counter-recipe="${recipe.id}" type="button" ${canCookNow ? '' : 'disabled'}>${recipeImg(recipe, 'pixel-card-icon')}<span><b>${recipe.name}</b><small>${requested ? 'Commandé · ' : ''}${Math.ceil(getPrepTime(recipe) / 1000)} s</small></span></button>`;
+    }).join('');
+    grid.querySelectorAll('[data-counter-recipe]').forEach(button => button.addEventListener('click', () => startCooking(button.dataset.counterRecipe)));
   }
 
   function unlockRecipeText(recipe) {
@@ -1407,6 +1448,10 @@
         pendingWorldAction = null;
         if (action.type === 'serve') serveCustomer(action.customerId);
         if (action.type === 'tab') switchTab(action.tab);
+        if (action.type === 'counterKitchen') {
+          switchTab('counter');
+          setTimeout(() => el('counterKitchen')?.scrollIntoView({ behavior: state.settings.reducedMotion ? 'auto' : 'smooth', block: 'center' }), 60);
+        }
       }
     }
   }
@@ -1414,7 +1459,7 @@
   function setupWorldControls() {
     const world = el('restaurantWorld');
     world.addEventListener('pointerdown', event => {
-      if (event.target.closest('.customer-avatar') || event.target.closest('.station') || event.target.closest('.furniture-item') || event.target.closest('.layout-slot')) return;
+      if (event.target.closest('.customer-avatar') || event.target.closest('.station') || event.target.closest('.furniture-item')) return;
       const point = pointFromEvent(event);
       if (layoutEditing) {
         if (selectedFurnitureId) placeFurnitureAt(point.x, point.y);
@@ -1439,14 +1484,14 @@
         if (layoutEditing) return;
         event.stopPropagation();
         const map = {
-          kitchen: { x: .58, y: .30, tab: 'kitchen' },
+          kitchen: { x: .58, y: .46, action: 'counterKitchen' },
           storage: { x: .88, y: .47, tab: 'zones' },
           register: { x: .73, y: .78, tab: 'upgrades' },
           farm: { x: .24, y: .53, tab: 'farm' },
           workshop: { x: .75, y: .53, tab: 'workshop' }
         };
         const target = map[station.dataset.station];
-        moveTo(target.x, target.y, { type: 'tab', tab: target.tab });
+        moveTo(target.x, target.y, target.action ? { type: target.action } : { type: 'tab', tab: target.tab });
       });
     });
   }
@@ -1710,6 +1755,7 @@
     renderActiveGoal();
     renderCustomers();
     renderTray();
+    if (currentTab === 'counter') renderCounterKitchen();
     if (currentTab === 'kitchen') renderKitchen();
     if (currentTab === 'farm') renderFarm();
     if (currentTab === 'settings') renderChest();
@@ -1735,6 +1781,7 @@
     renderPlayer();
     renderCustomers();
     renderTray();
+    renderCounterKitchen();
     renderKitchen();
     renderFarm();
     renderZones();

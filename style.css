@@ -841,9 +841,6 @@ img { image-rendering: pixelated; }
 .furniture-item.crate img { width:46px; height:42px; }
 .furniture-item.selected-item::after { content:""; position:absolute; inset:-8px; border:2px dashed #f6e0a6; border-radius:10px; pointer-events:none; }
 .layout-grid[hidden] { display:none; }
-.layout-slot { position:absolute; transform:translate(-50%, -50%); width:42px; height:24px; border-radius:50%; border:1px dashed rgba(255,246,213,.9); background:rgba(69,117,91,.18); box-shadow:0 0 0 2px rgba(42,58,46,.18); }
-.layout-slot.occupied { background:rgba(175,113,74,.18); }
-.layout-slot.selected { border-color:#ffeab7; background:rgba(214,170,91,.32); }
 .layout-editor-panel { margin-top:12px; border:3px solid #8a5e39; border-radius:16px; background:#f5e3c3; box-shadow:0 6px 0 rgba(65,39,22,.16); padding:14px; }
 .layout-editor-panel h3 { margin:0 0 6px; }
 .layout-editor-panel p { margin:0 0 10px; color:#6d523f; }
@@ -873,8 +870,43 @@ img { image-rendering: pixelated; }
 .furniture-item.chair img { width: 38px !important; height: 56px !important; }
 .furniture-item.shelf img { width: 58px !important; height: 70px !important; }
 .furniture-item.chest img { width: 56px !important; height: 44px !important; }
-.layout-slot { width: 44px !important; height: 24px !important; }
 @media (max-width: 480px) {
   .customer-avatar { width: 64px !important; min-height: 86px !important; }
   .customer-sprite { width: 48px !important; height: 62px !important; }
+}
+
+/* V1.5.0 — salles reliées et placement continu */
+.layout-grid { pointer-events:none; clip-path:polygon(28% 42%,72% 42%,90% 66%,76% 88%,24% 88%,10% 66%); background:rgba(255,224,145,.10); box-shadow:inset 0 0 0 2px rgba(255,239,189,.38); }
+.world-portal { top:auto !important; bottom:27% !important; width:82px !important; height:62px !important; padding:0 !important; }
+.world-portal img { display:block !important; width:70px !important; height:54px !important; margin:auto; transform:perspective(100px) rotateX(52deg); transform-origin:center bottom; filter:drop-shadow(0 5px 1px rgba(41,25,15,.30)); }
+.farm-door { left:16% !important; }
+.workshop-door { right:16% !important; }
+.world-portal small { position:absolute; left:50%; top:-13px; transform:translateX(-50%); margin:0 !important; padding:2px 7px !important; white-space:nowrap; }
+.customer-avatar { transform:translate(-50%,-62%) !important; }
+.customer-order { position:relative; z-index:4; }
+.counter-kitchen { margin:14px 0; border-color:#9d683e; background:linear-gradient(145deg,#fff0cf,#f1d4a3); }
+.counter-kitchen .panel-heading { align-items:flex-start; }
+.counter-cooking-queue { min-height:34px; display:flex; flex-wrap:wrap; gap:7px; margin:9px 0; }
+.counter-cooking-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 9px; border:1px solid #b47c48; border-radius:10px; background:#fff8e8; }
+.counter-cooking-chip small { color:#75543c; }
+.counter-recipe-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:8px; }
+.counter-recipe-button { min-height:58px; padding:7px; display:flex; align-items:center; gap:8px; text-align:left; border:2px solid #a66e3e; border-radius:11px; background:#fff9e9; color:#4b3020; cursor:pointer; }
+.counter-recipe-button.requested { border-color:#47785c; box-shadow:inset 0 0 0 2px rgba(71,120,92,.18); }
+.counter-recipe-button:disabled { opacity:.48; cursor:not-allowed; }
+.counter-recipe-button .pixel-card-icon { width:42px; height:42px; }
+.counter-recipe-button span { display:grid; gap:2px; }
+.counter-recipe-button small,.empty-inline { color:#785a42; }
+.specialist-room { min-height:210px; margin:0 0 16px; padding:22px; display:flex; align-items:center; justify-content:center; gap:24px; border:4px solid #76502f; border-radius:18px; background:linear-gradient(145deg,#ead0a0,#bc8a52); box-shadow:0 6px 0 rgba(65,39,22,.22); }
+.specialist-room > img { width:150px; height:155px; object-fit:contain; filter:drop-shadow(0 6px 0 rgba(47,28,16,.25)); }
+.specialist-room h2 { margin:0 0 7px; }
+.carpentry-room { background:linear-gradient(145deg,#ead3a7,#aa7745); }
+.machine-room-banner { background:linear-gradient(145deg,#d7c5a2,#8f765b); }
+.tray-actions .serve-stock { padding:4px 8px; }
+@media (max-width:700px) {
+  .world-portal { bottom:23% !important; transform:scale(.78); }
+  .farm-door { left:14% !important; }
+  .workshop-door { right:14% !important; }
+  .counter-recipe-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .specialist-room { flex-direction:column; text-align:center; padding:14px; }
+  .specialist-room > img { width:110px; height:110px; }
 }

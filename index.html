@@ -8,7 +8,7 @@
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1.4.0">
+  <link rel="stylesheet" href="style.css?v=1.5.0">
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -17,7 +17,7 @@
         <img class="brand-logo" src="assets/icon.svg" alt="Le Comptoir des Mondes">
         <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small><span id="versionLabel">V1.4.0</span> · Taverne & atelier</small>
+          <small><span id="versionLabel">V1.5.0</span> · Taverne & cuisine</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
@@ -43,13 +43,13 @@
             <div class="open-state"><span id="restaurantLamp" class="lamp-dot"></span><b id="restaurantStateLabel">Taverne ouverte</b></div>
             <div class="toolbar-actions"><button id="toggleLayoutEditor" class="wood-button alt" type="button">Agencer</button><button id="toggleRestaurant" class="wood-button" type="button">Fermer la taverne</button></div>
           </div>
-          <div id="restaurantWorld" class="restaurant-world" aria-label="Taverne et atelier en vue trois-quarts">
-            <img class="room-art" src="assets/regions/tavern_interior.png" alt="Intérieur pixel art de la taverne-atelier">
-            <button class="station kitchen-station" data-station="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Atelier cuisine</small></button>
+          <div id="restaurantWorld" class="restaurant-world" aria-label="Taverne et cuisine en vue trois-quarts">
+            <img class="room-art" src="assets/regions/tavern_interior.png" alt="Intérieur pixel art de la taverne et de sa cuisine">
+            <button class="station kitchen-station" data-station="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Cuisine</small></button>
             <button class="station storage-station" data-station="storage" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Réserve</small></button>
             <button class="station register-station" data-station="register" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Comptoir</small></button>
-            <button class="station world-portal farm-door" data-station="farm" type="button"><img src="assets/furniture/open_door.png" alt=""><small>Vers la ferme</small></button>
-            <button class="station world-portal workshop-door" data-station="workshop" type="button"><img src="assets/furniture/open_door.png" alt=""><small>Cour de fabrication</small></button>
+            <button class="station world-portal farm-door" data-station="farm" type="button"><img src="assets/furniture/open_door.png" alt=""><small>Ferme</small></button>
+            <button class="station world-portal workshop-door" data-station="workshop" type="button"><img src="assets/furniture/open_door.png" alt=""><small>Fabrication</small></button>
             <div id="furnitureLayer" class="furniture-layer"></div><div id="layoutGrid" class="layout-grid" hidden></div><div id="customerLayer" class="customer-layer"></div>
             <div id="player" class="player" aria-label="Votre personnage">
               <img id="playerSprite" class="player-body" src="assets/player/idle_01.png" alt="Artisane de la taverne">
@@ -63,10 +63,16 @@
               <span class="status-dot"></span>
               <span id="worldStatus">Touchez le sol pour vous déplacer.</span>
             </div>
-            <button id="contextAction" class="primary-button" type="button">Atelier</button>
+            <button id="contextAction" class="primary-button" type="button">Cuisine</button>
           </div>
         </div>
         <div id="layoutEditorPanel" class="layout-editor-panel" hidden></div>
+
+        <section id="counterKitchen" class="counter-kitchen panel-card">
+          <div class="panel-heading"><div><h2>Cuisine ouverte sur la salle</h2><small>Prépare les plats sans quitter les commandes des yeux.</small></div><span id="counterKitchenCapacity" class="badge">0/1</span></div>
+          <div id="counterCookingQueue" class="counter-cooking-queue"></div>
+          <div id="counterRecipeGrid" class="counter-recipe-grid"></div>
+        </section>
 
         <div class="dashboard-grid">
           <article class="panel-card">
@@ -90,8 +96,8 @@
       <section id="tab-kitchen" class="tab-panel" data-tab-panel="kitchen">
         <div class="section-header">
           <div>
-            <h1>Atelier & cuisine</h1>
-            <p>Transforme tes ressources, prépare tes plats et construis ton équipement.</p>
+            <h1>Cuisine</h1>
+            <p>Consulte ici toutes les recettes et le détail des ingrédients.</p>
           </div>
           <span id="kitchenSpeedLabel" class="badge">Vitesse normale</span>
         </div>
@@ -132,18 +138,23 @@
         </div>
         <div class="workshop-world">
           <img class="workshop-scene" src="assets/regions/market.png" alt="Cour de fabrication du Comptoir">
-          <button class="workshop-zone wood-zone" data-open-tab="kitchen" type="button"><img src="assets/stations/workbench.png" alt=""><b>Menuiserie</b><small>Tables, chaises et plateaux</small></button>
+          <button class="workshop-zone wood-zone" data-open-tab="carpentry" type="button"><img src="assets/stations/workbench.png" alt=""><b>Menuiserie</b><small>Tables, chaises et plateaux</small></button>
           <button class="workshop-zone machine-zone" data-open-tab="upgrades" type="button"><img src="assets/stations/craft_machine.png" alt=""><b>Machines</b><small>Fours et équipements</small></button>
           <button class="workshop-zone tech-zone locked-zone" data-open-tab="upgrades" type="button"><img src="assets/stations/forge.png" alt=""><b>Technologies</b><small>Robots et automatisation à débloquer</small></button>
           <div class="workshop-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
         </div>
       </section>
 
+      <section id="tab-carpentry" class="tab-panel" data-tab-panel="carpentry">
+        <div class="section-header"><div><h1>Salle de menuiserie</h1><p>Le futur espace de fabrication des tables, chaises, rangements et grands plateaux.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
+        <div class="specialist-room carpentry-room"><img src="assets/stations/workbench.png" alt="Établi de menuiserie"><div><h2>Établi principal</h2><p>Les recettes de mobilier seront ajoutées ici avec leurs coûts en planches, clous et composants.</p><button class="primary-button" data-open-tab="upgrades" type="button">Voir les améliorations disponibles</button></div></div>
+      </section>
+
       <section id="tab-upgrades" class="tab-panel" data-tab-panel="upgrades">
         <div class="section-header">
           <div>
-            <h1>Améliorations</h1>
-            <p>Les améliorations modifient réellement le service, la cuisine ou la collecte.</p>
+            <h1>Salle des machines</h1>
+            <p>Construis et améliore les équipements du service, de la cuisine et de la collecte.</p>
           </div>
           <div class="filter-row">
             <button class="filter-chip active" data-upgrade-filter="all" type="button">Toutes</button>
@@ -152,6 +163,7 @@
             <button class="filter-chip" data-upgrade-filter="automation" type="button">Auto</button>
           </div>
         </div>
+        <div class="machine-room-banner specialist-room"><img src="assets/stations/craft_machine.png" alt="Machine de fabrication"><div><h2>Poste mécanique</h2><p>Fours, stockage, automatisation et futures machines sont construits dans cette salle.</p><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour de fabrication</button></div></div>
         <div id="upgradeGrid" class="card-grid"></div>
       </section>
 
@@ -268,7 +280,7 @@
 
     <nav class="bottom-nav" aria-label="Navigation principale">
       <button class="nav-button active" data-tab="counter" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Taverne</small></button>
-      <button class="nav-button" data-tab="kitchen" type="button"><img src="assets/stations/workbench.png" alt=""><small>Atelier</small></button>
+      <button class="nav-button" data-tab="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Cuisine</small></button>
       <button class="nav-button" data-tab="farm" type="button"><img src="assets/food/vegetables_bundle.png" alt=""><small>Ferme</small></button>
       <button class="nav-button" data-tab="zones" type="button"><img src="assets/building/hanging_sign.png" alt=""><small>Régions</small></button>
       <button class="nav-button" data-tab="upgrades" type="button"><img src="assets/stations/craft_machine.png" alt=""><small>Machines</small></button>
@@ -282,6 +294,6 @@
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=1.4.0"></script>
+  <script src="app.js?v=1.5.0"></script>
 </body>
 </html>
