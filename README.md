@@ -1,23 +1,30 @@
-# Le Comptoir des Mondes — V1.1.1
+LE COMPTOIR DES MONDES — PACK D'ASSETS ORGANISÉ
 
-Jeu web/PWA mobile en HTML, CSS et JavaScript, hébergeable sur GitHub Pages.
+Contenu : 118 PNG + fichiers meta
 
-## Mise à jour GitHub
+Arborescence principale :
+- assets/player
+- assets/clients
+- assets/npcs
+- assets/furniture
+- assets/stations
+- assets/food
+- assets/resources
+- assets/building
+- assets/regions
+- meta/assets.json
 
-Le ZIP est préparé pour être envoyé directement à la racine du dépôt. Les fichiers `index.html`, `app.js`, `style.css`, `manifest.json` et `service-worker.js` doivent rester au même niveau.
+Fichiers utiles :
+- meta/assets.json : index complet des assets
+- meta/renaming_map.csv : correspondance ancien nom -> nouveau nom
+- meta/original_manifest.csv : manifest source fourni dans le ZIP d'origine
 
-Après l'envoi, ouvrir une fois l'URL GitHub Pages avec `?v=110` pour forcer la récupération de la nouvelle version.
-
-## Sauvegarde
-
-La clé de sauvegarde reste `comptoir_des_mondes_save`. Les anciennes parties restent compatibles. L'export JSON reste recommandé avant une grosse mise à jour.
-
-## Contenu visuel
-
-- `assets/pixel/` : sprites et objets utilisés dans le jeu ;
-- `assets/art-direction.png` : planche de direction artistique ;
-- `assets/asset-library.png` : planche complète des objets de référence.
-
-## V1.1.1
-
-Cette version refond le visuel en pixel art 3/4 et ajoute l'ouverture/fermeture de la taverne. Le système de craft complet reste une étape suivante : pour l'instant, l'atelier prépare surtout les recettes existantes.
+Exemple d'utilisation :
+- player idle : assets/player/idle_01.png
+- client chat : assets/clients/client_cat_01.png
+- table ronde : assets/furniture/table_round.png
+- four : assets/stations/oven.png
+- café : assets/food/coffee_cup.png
+- planche : assets/resources/plank.png
+- mur droit : assets/building/wall_straight.png
+- région marché : assets/regions/market.png
