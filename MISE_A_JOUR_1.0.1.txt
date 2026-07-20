@@ -1,0 +1,10 @@
+MISE À JOUR 1.0.1 — IMPORTANT
+
+1. Ouvre la RACINE de ton dépôt GitHub, là où se trouve déjà index.html.
+2. Remplace directement index.html, app.js, style.css, manifest.json, service-worker.js et le dossier assets.
+3. Ne dépose pas un dossier parent dans le dépôt : sinon GitHub Pages continue d’utiliser les anciens fichiers à la racine.
+4. Attends environ 1 minute après le commit.
+5. Ferme complètement l’application/site puis rouvre-le.
+6. La version affichée en haut doit être V1.0.1.
+
+La sauvegarde reste conservée car l’URL et la clé localStorage ne changent pas.
