@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.3.0';
+  const GAME_VERSION = '1.4.0';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -116,6 +116,9 @@
     { id: 'cold_storage', name: 'Réserve froide', icon: '🧊', category: 'kitchen', desc: '+20 unités à la limite confortable de stock.', coins: 10500, materials: { metal: 12, glass: 12 }, repNeed: 460, zone: 'mine' },
     { id: 'lucky_charm', name: 'Porte-bonheur du comptoir', icon: '🍀', category: 'service', desc: 'Les clients mystère apparaissent un peu plus souvent.', coins: 12800, materials: { crystal: 5, fabric: 6 }, repNeed: 520, zone: 'mine' },
     { id: 'zone_cart', name: 'Chariot d’exploration', icon: '🛒', category: 'automation', desc: 'Réduit le délai entre deux récoltes actives.', coins: 18000, materials: { metal: 18, wood: 20 }, repNeed: 610, zone: 'sea' }
+    ,{ id: 'farm_plot_5', name: 'Parcelle agricole V', icon: '🌱', category: 'service', desc: 'Ajoute une parcelle cultivable à la ferme.', coins: 900, materials: { wood: 8, stone: 4 }, repNeed: 35 }
+    ,{ id: 'farm_plot_6', name: 'Parcelle agricole VI', icon: '🌿', category: 'service', desc: 'Ajoute une seconde parcelle cultivable.', coins: 2800, materials: { wood: 16, stone: 8 }, repNeed: 140, requires: 'farm_plot_5' }
+    ,{ id: 'farm_auto', name: 'Jardinier mécanique', icon: '🤖', category: 'automation', desc: 'Replante automatiquement une parcelle vide lorsqu’une graine est disponible.', coins: 12000, materials: { wood: 20, metal: 14 }, repNeed: 420, requires: 'farm_plot_6' }
   ];
 
   const COLLECTIONS = [
@@ -215,7 +218,8 @@
     counter_2: 'service_counter', counter_3: 'service_counter', counter_4: 'floor_dark', cutting_board: 'cutting_board', coffee_machine: 'coffee_machine',
     oven: 'oven', shelf: 'shelf', display_case: 'display_case', wood_tray: 'tray', strong_tray: 'service_cart', register: 'cash_register',
     helper_counter: 'client_red', helper_kitchen: 'player_carry', ingredient_delivery: 'basket', wood_collector: 'workbench', better_tools: 'workbench',
-    market_contacts: 'sign', cold_storage: 'storage_chest', zone_cart: 'service_cart', lucky_charm: 'flowers', smart_schedule: 'craft_machine'
+    market_contacts: 'sign', cold_storage: 'storage_chest', zone_cart: 'service_cart', lucky_charm: 'flowers', smart_schedule: 'craft_machine',
+    farm_plot_5: 'vegetables', farm_plot_6: 'fruits', farm_auto: 'craft_machine'
   };
   const FURNITURE = {
     table_round: { id: 'table_round', name: 'Table ronde', asset: 'table_round' },
@@ -224,16 +228,17 @@
     chest: { id: 'chest', name: 'Petit coffre', asset: 'storage_chest' }
   };
   const LAYOUT_SLOTS = [
-    { x: .18, y: .72 }, { x: .27, y: .65 }, { x: .37, y: .60 }, { x: .48, y: .57 }, { x: .60, y: .55 },
-    { x: .27, y: .80 }, { x: .39, y: .76 }, { x: .52, y: .73 }, { x: .66, y: .70 }, { x: .79, y: .67 },
-    { x: .45, y: .85 }, { x: .61, y: .83 }, { x: .76, y: .81 }
+    { x: .30, y: .49 }, { x: .40, y: .49 }, { x: .50, y: .49 }, { x: .60, y: .49 }, { x: .70, y: .49 },
+    { x: .22, y: .57 }, { x: .31, y: .57 }, { x: .40, y: .57 }, { x: .50, y: .57 }, { x: .60, y: .57 }, { x: .69, y: .57 }, { x: .78, y: .57 },
+    { x: .20, y: .64 }, { x: .30, y: .64 }, { x: .40, y: .64 }, { x: .50, y: .64 }, { x: .60, y: .64 }, { x: .70, y: .64 }, { x: .80, y: .64 },
+    { x: .29, y: .71 }, { x: .37, y: .71 }, { x: .45, y: .71 }, { x: .55, y: .71 }, { x: .63, y: .71 }, { x: .71, y: .71 }
   ];
   const DEFAULT_PLACED_FURNITURE = [
-    { uid: 'd-table', furnitureId: 'table_round', slotIndex: 2 },
-    { uid: 'd-chair-a', furnitureId: 'chair', slotIndex: 1 },
-    { uid: 'd-chair-b', furnitureId: 'chair', slotIndex: 6 },
-    { uid: 'd-shelf', furnitureId: 'shelf', slotIndex: 9 },
-    { uid: 'd-chest', furnitureId: 'chest', slotIndex: 12 }
+    { uid: 'd-table', furnitureId: 'table_round', x: .42, y: .62 },
+    { uid: 'd-chair-a', furnitureId: 'chair', x: .33, y: .64 },
+    { uid: 'd-chair-b', furnitureId: 'chair', x: .51, y: .66 },
+    { uid: 'd-shelf', furnitureId: 'shelf', x: .72, y: .51 },
+    { uid: 'd-chest', furnitureId: 'chest', x: .74, y: .70 }
   ];
 
   function assetPath(name) { return ASSET_PATHS[name] || 'assets/food/plate.png'; }
@@ -282,7 +287,7 @@
       lastSavedAt: 0,
       tutorialSeen: false,
       restaurantOpen: true,
-      farm: { seeds: { vegetables: 4, fruits: 3, spices: 3 }, plots: [null, null, null, null] },
+      farm: { seeds: { vegetables: 4, fruits: 3, spices: 3 }, plots: [null, null, null, null], player: { x: .50, y: .82 }, lastAutoPlantAt: 0 },
       decorInventory: { table_round: 1, chair: 2, shelf: 1, chest: 1 },
       placedFurniture: DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }))
     };
@@ -300,6 +305,7 @@
   let mini = null;
   let layoutEditing = false;
   let selectedFurnitureId = null;
+  let selectedFarmPlot = null;
 
   const el = id => document.getElementById(id);
   const fmt = n => Math.floor(Number(n || 0)).toLocaleString('fr-FR');
@@ -330,15 +336,19 @@
       zoneXP: { ...base.zoneXP, ...(raw.zoneXP || {}) },
       cooldowns: { ...(raw.cooldowns || {}) },
       minigame: { ...base.minigame, ...(raw.minigame || {}) },
-      farm: { ...base.farm, ...(raw.farm || {}), seeds: { ...base.farm.seeds, ...(raw.farm?.seeds || {}) }, plots: Array.isArray(raw.farm?.plots) ? raw.farm.plots.slice(0, 4) : base.farm.plots },
+      farm: { ...base.farm, ...(raw.farm || {}), seeds: { ...base.farm.seeds, ...(raw.farm?.seeds || {}) }, player: { ...base.farm.player, ...(raw.farm?.player || {}) }, plots: Array.isArray(raw.farm?.plots) ? raw.farm.plots.slice(0, 6) : base.farm.plots },
       decorInventory: { ...base.decorInventory, ...(raw.decorInventory || {}) },
       placedFurniture: Array.isArray(raw.placedFurniture) ? raw.placedFurniture : base.placedFurniture
     };
     const validFurnitureIds = new Set(Object.keys(FURNITURE));
     merged.decorInventory = Object.fromEntries(Object.keys(base.decorInventory).map(key => [key, Number(merged.decorInventory[key] || 0)]));
     merged.placedFurniture = (Array.isArray(merged.placedFurniture) ? merged.placedFurniture : [])
-      .filter(item => validFurnitureIds.has(item.furnitureId) && Number.isInteger(item.slotIndex) && item.slotIndex >= 0 && item.slotIndex < LAYOUT_SLOTS.length)
-      .map(item => ({ uid: item.uid || `${item.furnitureId}-${item.slotIndex}`, furnitureId: item.furnitureId, slotIndex: item.slotIndex }));
+      .filter(item => validFurnitureIds.has(item.furnitureId) && ((Number.isFinite(item.x) && Number.isFinite(item.y)) || (Number.isInteger(item.slotIndex) && LAYOUT_SLOTS[item.slotIndex])))
+      .map(item => {
+        const legacy = LAYOUT_SLOTS[item.slotIndex] || { x: item.x, y: item.y };
+        const point = floorPoint(item.x ?? legacy.x, item.y ?? legacy.y);
+        return { uid: item.uid || `${item.furnitureId}-${Date.now()}-${Math.random()}`, furnitureId: item.furnitureId, x: point.x, y: point.y };
+      });
     if (!merged.placedFurniture.length) merged.placedFurniture = DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }));
     merged.saveVersion = SAVE_VERSION;
     merged.gameVersion = GAME_VERSION;
@@ -469,8 +479,9 @@
   }
 
   function getEffects() {
+    const usableSeats = getUsableSeats().length;
     return {
-      maxCustomers: 2 + (hasUpgrade(state, 'counter_2') ? 1 : 0) + (hasUpgrade(state, 'counter_3') ? 1 : 0) + (hasUpgrade(state, 'counter_4') ? 2 : 0),
+      maxCustomers: Math.min(Math.max(1, usableSeats), 2 + (hasUpgrade(state, 'counter_2') ? 1 : 0) + (hasUpgrade(state, 'counter_3') ? 1 : 0) + (hasUpgrade(state, 'counter_4') ? 2 : 0)),
       trayCapacity: 1 + (hasUpgrade(state, 'wood_tray') ? 1 : 0) + (hasUpgrade(state, 'strong_tray') ? 1 : 0),
       cookingSlots: 1 + (hasUpgrade(state, 'shelf') ? 1 : 0),
       prepMultiplier: (hasUpgrade(state, 'cutting_board') ? 0.9 : 1) * (hasCollection('utensils') ? 0.95 : 1) * (Date.now() < state.boosts.kitchenUntil ? 0.65 : 1),
@@ -482,6 +493,21 @@
       gatherCooldown: hasUpgrade(state, 'zone_cart') ? 750 : 1500,
       serviceSpeed: Date.now() < state.boosts.serviceUntil ? 1.45 : 1
     };
+  }
+
+  function floorPoint(x, y) {
+    const bound = (value, min, max) => Math.max(min, Math.min(max, value));
+    const cleanY = bound(Number(y) || .62, .49, .72);
+    const upper = cleanY <= .62;
+    const progress = upper ? (cleanY - .49) / .13 : (cleanY - .62) / .10;
+    const minX = upper ? .28 - progress * .12 : .16 + progress * .12;
+    const maxX = upper ? .72 + progress * .12 : .84 - progress * .12;
+    return { x: bound(Number(x) || .5, minX, maxX), y: cleanY };
+  }
+
+  function getUsableSeats() {
+    const tables = state.placedFurniture.filter(item => item.furnitureId === 'table_round');
+    return state.placedFurniture.filter(item => item.furnitureId === 'chair' && tables.some(table => Math.hypot(table.x - item.x, table.y - item.y) <= .18));
   }
 
   function switchTab(tab) {
@@ -528,9 +554,9 @@
     const curtain = el('closedCurtain');
     const label = el('restaurantStateLabel');
     const layoutButton = el('toggleLayoutEditor');
-    if (!card || !button || !curtain || !label) return;
+    if (!card || !button || !label) return;
     card.classList.toggle('closed', !state.restaurantOpen);
-    curtain.hidden = state.restaurantOpen;
+    if (curtain) curtain.hidden = true;
     label.textContent = state.restaurantOpen ? 'Taverne ouverte' : 'Taverne fermée';
     button.textContent = state.restaurantOpen ? 'Fermer la taverne' : 'Ouvrir la taverne';
     el('worldStatus').textContent = layoutEditing
@@ -573,10 +599,6 @@
     renderAll();
   }
 
-  function getPlacedFurnitureAt(slotIndex) {
-    return state.placedFurniture.find(item => item.slotIndex === slotIndex);
-  }
-
   function removeFurniture(itemUniqueId) {
     const index = state.placedFurniture.findIndex(item => item.uid === itemUniqueId);
     if (index < 0) return;
@@ -587,10 +609,11 @@
     toast(`${FURNITURE[item.furnitureId].name} rangé.`);
   }
 
-  function placeFurnitureOnSlot(slotIndex) {
+  function placeFurnitureAt(x, y) {
     if (!layoutEditing || !selectedFurnitureId) return;
-    if (getPlacedFurnitureAt(slotIndex)) {
-      toast('Cet emplacement est déjà occupé.');
+    const point = floorPoint(x, y);
+    if (state.placedFurniture.some(item => Math.hypot(item.x - point.x, item.y - point.y) < .075)) {
+      toast('Un meuble est trop proche de cet endroit.');
       return;
     }
     if ((state.decorInventory[selectedFurnitureId] || 0) <= 0) {
@@ -601,7 +624,8 @@
     state.placedFurniture.push({
       uid: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
       furnitureId: selectedFurnitureId,
-      slotIndex
+      x: point.x,
+      y: point.y
     });
     saveState();
     renderAll();
@@ -614,21 +638,24 @@
     if (!layer || !grid) return;
     layer.innerHTML = '';
     state.placedFurniture.forEach(item => {
-      const slot = LAYOUT_SLOTS[item.slotIndex];
       const furn = FURNITURE[item.furnitureId];
-      if (!slot || !furn) return;
+      if (!furn) return;
+      const point = floorPoint(item.x, item.y);
+      item.x = point.x;
+      item.y = point.y;
       const node = document.createElement(layoutEditing ? 'button' : 'div');
       if (layoutEditing) node.type = 'button';
       node.className = `furniture-item ${item.furnitureId}`;
-      node.style.left = `${slot.x * 100}%`;
-      node.style.top = `${slot.y * 100}%`;
-      node.style.zIndex = String(5 + Math.round(slot.y * 100));
+      node.style.left = `${point.x * 100}%`;
+      node.style.top = `${point.y * 100}%`;
+      node.style.zIndex = String(5 + Math.round(point.y * 100));
       node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}">`;
       if (layoutEditing) {
-        node.title = `${furn.name} — toucher pour retirer`;
+        node.title = `${furn.name} — toucher pour déplacer`;
         node.classList.add('selected-item');
         node.addEventListener('pointerdown', event => {
           event.stopPropagation();
+          selectedFurnitureId = item.furnitureId;
           removeFurniture(item.uid);
         });
       }
@@ -641,14 +668,13 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'layout-slot';
-        if (getPlacedFurnitureAt(index)) button.classList.add('occupied');
         if (selectedFurnitureId) button.classList.add('selected');
         button.style.left = `${slot.x * 100}%`;
         button.style.top = `${slot.y * 100}%`;
         button.style.zIndex = String(4 + Math.round(slot.y * 100));
         button.addEventListener('pointerdown', event => {
           event.stopPropagation();
-          placeFurnitureOnSlot(index);
+          placeFurnitureAt(slot.x, slot.y);
         });
         grid.appendChild(button);
       });
@@ -663,7 +689,7 @@
     const selected = selectedFurnitureId ? FURNITURE[selectedFurnitureId]?.name : 'aucun';
     panel.innerHTML = `
       <h3>Agencement libre</h3>
-      <p>Choisis un meuble ci-dessous, puis touche un emplacement vert dans la taverne pour le poser. Touche un meuble posé pour le retirer.</p>
+      <p>Choisis un meuble, puis touche n’importe quel endroit du plancher pour le poser. Les points servent seulement de repères. Touche un meuble posé pour le déplacer.</p>
       <div class="layout-chip">Sélection : <b>${selected}</b></div>
       <div class="layout-palette">
         ${Object.values(FURNITURE).map(item => `
@@ -740,14 +766,8 @@
   }
 
   function customerSlot(index) {
-    const slots = [
-      { x: .25, y: .70 },
-      { x: .43, y: .38 },
-      { x: .58, y: .33 },
-      { x: .68, y: .57 },
-      { x: .16, y: .54 },
-      { x: .54, y: .73 }
-    ];
+    const seats = getUsableSeats();
+    const slots = seats.length ? seats.map(seat => floorPoint(seat.x, seat.y - .025)) : [{ x: .56, y: .66 }];
     return slots[index % slots.length];
   }
 
@@ -1057,6 +1077,14 @@
     fruits: { name: 'Fruits', asset: 'fruits', growMs: 45000, yield: [1, 3] },
     spices: { name: 'Herbes', asset: 'spices', growMs: 38000, yield: [1, 3] }
   };
+  const FARM_PLOT_POSITIONS = [
+    { x: .28, y: .38 }, { x: .50, y: .38 }, { x: .72, y: .38 },
+    { x: .28, y: .67 }, { x: .50, y: .67 }, { x: .72, y: .67 }
+  ];
+
+  function getFarmCapacity() {
+    return 4 + (hasUpgrade(state, 'farm_plot_5') ? 1 : 0) + (hasUpgrade(state, 'farm_plot_6') ? 1 : 0);
+  }
 
   function farmPlotState(plot) {
     if (!plot) return { status: 'empty', remaining: 0 };
@@ -1070,7 +1098,18 @@
     if ((state.farm.seeds[cropId] || 0) < 1) return toast(`Plus de graines de ${FARM_CROPS[cropId].name.toLowerCase()}.`);
     state.farm.seeds[cropId] -= 1;
     state.farm.plots[index] = { cropId, readyAt: Date.now() + FARM_CROPS[cropId].growMs };
+    selectedFarmPlot = null;
     saveState(); renderFarm(); toast(`${FARM_CROPS[cropId].name} plantés.`);
+  }
+
+  function visitFarmPlot(index) {
+    const position = FARM_PLOT_POSITIONS[index];
+    if (!position) return;
+    state.farm.player = { x: position.x, y: Math.min(.86, position.y + .16) };
+    const info = farmPlotState(state.farm.plots[index]);
+    selectedFarmPlot = info.status === 'empty' ? index : null;
+    if (info.status === 'ready') setTimeout(() => harvestCrop(index), 220);
+    renderFarm();
   }
 
   function harvestCrop(index) {
@@ -1087,16 +1126,25 @@
   function renderFarm() {
     const grid = el('farmPlotGrid');
     const seeds = el('farmSeeds');
-    if (!grid || !seeds) return;
+    const player = el('farmPlayer');
+    const choicePanel = el('farmChoicePanel');
+    if (!grid || !seeds || !player || !choicePanel) return;
+    const capacity = getFarmCapacity();
+    while (state.farm.plots.length < capacity) state.farm.plots.push(null);
     seeds.innerHTML = Object.entries(FARM_CROPS).map(([id, crop]) => `<span class="resource-chip">${pixelImg(crop.asset, crop.name)} ${crop.name} : ${state.farm.seeds[id] || 0} graine(s)</span>`).join('');
-    grid.innerHTML = state.farm.plots.map((plot, index) => {
+    player.style.left = `${state.farm.player.x * 100}%`;
+    player.style.top = `${state.farm.player.y * 100}%`;
+    grid.innerHTML = state.farm.plots.slice(0, capacity).map((plot, index) => {
       const info = farmPlotState(plot);
-      if (info.status === 'empty') return `<article class="farm-plot empty"><b>Parcelle ${index + 1}</b><small>Choisis une culture</small><div class="farm-actions">${Object.entries(FARM_CROPS).map(([id, crop]) => `<button class="secondary-button plant-crop" data-plot="${index}" data-crop="${id}" type="button">${pixelImg(crop.asset, crop.name)} Planter</button>`).join('')}</div></article>`;
-      if (info.status === 'growing') return `<article class="farm-plot growing"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>${info.crop.name} poussent</b><small>Prêtes dans ${Math.ceil(info.remaining / 1000)} s</small></article>`;
-      return `<article class="farm-plot ready"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>${info.crop.name} prêtes</b><button class="primary-button harvest-crop" data-plot="${index}" type="button">Récolter</button></article>`;
+      const position = FARM_PLOT_POSITIONS[index];
+      if (info.status === 'empty') return `<button class="farm-plot empty" style="left:${position.x * 100}%;top:${position.y * 100}%" data-visit-plot="${index}" type="button"><b>Parcelle ${index + 1}</b><small>Terre disponible</small></button>`;
+      if (info.status === 'growing') return `<button class="farm-plot growing" style="left:${position.x * 100}%;top:${position.y * 100}%" data-visit-plot="${index}" type="button"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>${info.crop.name}</b><small>${Math.ceil(info.remaining / 1000)} s</small></button>`;
+      return `<button class="farm-plot ready" style="left:${position.x * 100}%;top:${position.y * 100}%" data-visit-plot="${index}" type="button"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>Récolter</b></button>`;
     }).join('');
-    grid.querySelectorAll('.plant-crop').forEach(button => button.addEventListener('click', () => plantCrop(Number(button.dataset.plot), button.dataset.crop)));
-    grid.querySelectorAll('.harvest-crop').forEach(button => button.addEventListener('click', () => harvestCrop(Number(button.dataset.plot))));
+    grid.querySelectorAll('[data-visit-plot]').forEach(button => button.addEventListener('click', () => visitFarmPlot(Number(button.dataset.visitPlot))));
+    if (selectedFarmPlot === null) choicePanel.innerHTML = '<small>Touche une parcelle pour t’y rendre.</small>';
+    else choicePanel.innerHTML = `<b>Que planter sur la parcelle ${selectedFarmPlot + 1} ?</b><div class="farm-actions">${Object.entries(FARM_CROPS).map(([id, crop]) => `<button class="secondary-button plant-crop" data-crop="${id}" type="button" ${(state.farm.seeds[id] || 0) < 1 ? 'disabled' : ''}>${pixelImg(crop.asset, crop.name)} ${crop.name}</button>`).join('')}</div>`;
+    choicePanel.querySelectorAll('.plant-crop').forEach(button => button.addEventListener('click', () => plantCrop(selectedFarmPlot, button.dataset.crop)));
   }
 
   function gather(zoneId, nodeIndex) {
@@ -1320,8 +1368,9 @@
   }
 
   function moveTo(x, y, action = null, showMarker = true) {
-    movementTarget.x = clamp(x, .04, .96);
-    movementTarget.y = clamp(y, .08, .92);
+    const point = floorPoint(x, y);
+    movementTarget.x = point.x;
+    movementTarget.y = point.y;
     pendingWorldAction = action;
     if (showMarker && state.settings.showMoveMarker) {
       const marker = el('moveMarker');
@@ -1365,10 +1414,14 @@
   function setupWorldControls() {
     const world = el('restaurantWorld');
     world.addEventListener('pointerdown', event => {
-      if (layoutEditing) return;
       if (event.target.closest('.customer-avatar') || event.target.closest('.station') || event.target.closest('.furniture-item') || event.target.closest('.layout-slot')) return;
-      world.setPointerCapture?.(event.pointerId);
       const point = pointFromEvent(event);
+      if (layoutEditing) {
+        if (selectedFurnitureId) placeFurnitureAt(point.x, point.y);
+        else toast('Choisis d’abord un meuble dans la palette.');
+        return;
+      }
+      world.setPointerCapture?.(event.pointerId);
       followPointerActive = state.settings.movementMode === 'follow';
       moveTo(point.x, point.y);
     });
@@ -1388,7 +1441,9 @@
         const map = {
           kitchen: { x: .58, y: .30, tab: 'kitchen' },
           storage: { x: .88, y: .47, tab: 'zones' },
-          register: { x: .73, y: .78, tab: 'upgrades' }
+          register: { x: .73, y: .78, tab: 'upgrades' },
+          farm: { x: .24, y: .53, tab: 'farm' },
+          workshop: { x: .75, y: .53, tab: 'workshop' }
         };
         const target = map[station.dataset.station];
         moveTo(target.x, target.y, { type: 'tab', tab: target.tab });
@@ -1625,6 +1680,17 @@
     if (hasUpgrade(state, 'helper_kitchen') && now - automationTimers.kitchen >= 52000) {
       if (canCookRecipe(getRecipe('toast')) && state.cooking.length < getEffects().cookingSlots) startCooking('toast', true);
       automationTimers.kitchen = now;
+    }
+    if (hasUpgrade(state, 'farm_auto') && now - (state.farm.lastAutoPlantAt || 0) >= 45000) {
+      const emptyIndex = state.farm.plots.slice(0, getFarmCapacity()).findIndex(plot => !plot);
+      const cropId = Object.keys(FARM_CROPS).find(id => (state.farm.seeds[id] || 0) > 0);
+      if (emptyIndex >= 0 && cropId) {
+        state.farm.seeds[cropId] -= 1;
+        state.farm.plots[emptyIndex] = { cropId, readyAt: now + FARM_CROPS[cropId].growMs };
+        toast(`Jardinier mécanique : ${FARM_CROPS[cropId].name.toLowerCase()} plantés.`);
+      }
+      state.farm.lastAutoPlantAt = now;
+      saveState();
     }
   }
 

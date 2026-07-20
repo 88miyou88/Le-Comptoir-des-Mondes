@@ -8,7 +8,7 @@
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1.3.0">
+  <link rel="stylesheet" href="style.css?v=1.4.0">
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -17,7 +17,7 @@
         <img class="brand-logo" src="assets/icon.svg" alt="Le Comptoir des Mondes">
         <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small><span id="versionLabel">V1.3.0</span> · Taverne & atelier</small>
+          <small><span id="versionLabel">V1.4.0</span> · Taverne & atelier</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
@@ -48,13 +48,15 @@
             <button class="station kitchen-station" data-station="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Atelier cuisine</small></button>
             <button class="station storage-station" data-station="storage" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Réserve</small></button>
             <button class="station register-station" data-station="register" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Comptoir</small></button>
+            <button class="station world-portal farm-door" data-station="farm" type="button"><img src="assets/furniture/open_door.png" alt=""><small>Vers la ferme</small></button>
+            <button class="station world-portal workshop-door" data-station="workshop" type="button"><img src="assets/furniture/open_door.png" alt=""><small>Cour de fabrication</small></button>
             <div id="furnitureLayer" class="furniture-layer"></div><div id="layoutGrid" class="layout-grid" hidden></div><div id="customerLayer" class="customer-layer"></div>
             <div id="player" class="player" aria-label="Votre personnage">
               <img id="playerSprite" class="player-body" src="assets/player/idle_01.png" alt="Artisane de la taverne">
               <span class="player-shadow"></span>
             </div>
             <div id="moveMarker" class="move-marker" hidden></div>
-            <div id="closedCurtain" class="closed-curtain" hidden><img src="assets/furniture/closed_door.png" alt=""><b>Taverne fermée</b><small>Prépare ton stock tranquillement.</small></div>
+            <div id="closedCurtain" class="closed-curtain" hidden></div>
           </div>
           <div class="world-footer">
             <div>
@@ -111,11 +113,30 @@
 
       <section id="tab-farm" class="tab-panel" data-tab-panel="farm">
         <div class="section-header">
-          <div><h1>Petite ferme</h1><p>Plante, attends quelques instants puis récolte des ingrédients pour la cuisine.</p></div>
-          <span class="badge">Prototype jouable</span>
+          <div><h1>Jardin du Comptoir</h1><p>Déplace-toi jusqu’à une parcelle, puis choisis ce que tu veux planter.</p></div>
+          <button class="secondary-button" data-open-tab="counter" type="button">Retourner à la taverne</button>
         </div>
         <div id="farmSeeds" class="farm-seeds"></div>
-        <div id="farmPlotGrid" class="farm-grid"></div>
+        <div class="farm-world">
+          <img class="farm-scene" src="assets/regions/forest.png" alt="Jardin et terres du Comptoir">
+          <div id="farmPlotGrid" class="farm-grid"></div>
+          <div id="farmPlayer" class="farm-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
+          <div id="farmChoicePanel" class="farm-choice-panel"></div>
+        </div>
+      </section>
+
+      <section id="tab-workshop" class="tab-panel" data-tab-panel="workshop">
+        <div class="section-header">
+          <div><h1>Cour de fabrication</h1><p>L’espace consacré aux meubles, équipements et futures technologies du Comptoir.</p></div>
+          <button class="secondary-button" data-open-tab="counter" type="button">Retourner à la taverne</button>
+        </div>
+        <div class="workshop-world">
+          <img class="workshop-scene" src="assets/regions/market.png" alt="Cour de fabrication du Comptoir">
+          <button class="workshop-zone wood-zone" data-open-tab="kitchen" type="button"><img src="assets/stations/workbench.png" alt=""><b>Menuiserie</b><small>Tables, chaises et plateaux</small></button>
+          <button class="workshop-zone machine-zone" data-open-tab="upgrades" type="button"><img src="assets/stations/craft_machine.png" alt=""><b>Machines</b><small>Fours et équipements</small></button>
+          <button class="workshop-zone tech-zone locked-zone" data-open-tab="upgrades" type="button"><img src="assets/stations/forge.png" alt=""><b>Technologies</b><small>Robots et automatisation à débloquer</small></button>
+          <div class="workshop-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
+        </div>
       </section>
 
       <section id="tab-upgrades" class="tab-panel" data-tab-panel="upgrades">
@@ -261,6 +282,6 @@
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=1.3.0"></script>
+  <script src="app.js?v=1.4.0"></script>
 </body>
 </html>

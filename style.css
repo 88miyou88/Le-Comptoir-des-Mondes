@@ -229,7 +229,7 @@ button:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.6); box-
   bottom: 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: repeat(8, minmax(62px, 1fr));
+  grid-template-columns: repeat(9, minmax(56px, 1fr));
   gap: 2px;
   padding: 7px max(8px, env(safe-area-inset-left)) calc(7px + var(--safe-bottom)) max(8px, env(safe-area-inset-right));
   overflow-x: auto;
@@ -478,20 +478,42 @@ img { image-rendering: pixelated; }
   white-space: normal;
 }
 .station:active img { transform: translateY(2px); }
-.farm-seeds { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
-.farm-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }
-.farm-plot { min-height:180px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; border:3px solid #875c35; border-radius:18px; background:linear-gradient(145deg, #76522f, #4f351f); color:#fff0c4; box-shadow:inset 0 0 0 3px rgba(255,230,163,.12), 0 5px 0 rgba(58,35,18,.28); }
-.farm-plot.empty { background:linear-gradient(145deg, #8b6338, #5c3c22); }
-.farm-plot.growing { background:linear-gradient(145deg, #497144, #2e5132); }
-.farm-plot.ready { background:linear-gradient(145deg, #749448, #49672f); }
-.farm-plot > img { width:88px; height:88px; object-fit:contain; filter:drop-shadow(0 4px 0 rgba(31,20,12,.28)); }
-.farm-plot small { color:#ffe6ad; }
+.farm-seeds { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
+.farm-world { position:relative; width:min(100%, 980px); margin:0 auto 82px; aspect-ratio:16/7.3; overflow:hidden; border:4px solid #76502f; border-radius:18px; background:#8fbd72; box-shadow:0 7px 0 rgba(65,39,22,.24); }
+.farm-scene { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.68; filter:saturate(.9) brightness(1.08); }
+.farm-grid { position:absolute; inset:0; z-index:3; }
+.farm-plot { position:absolute; transform:translate(-50%,-50%) rotate(-1deg); width:18%; min-height:20%; padding:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; text-align:center; border:3px solid #6d4528; border-radius:45%; background:repeating-linear-gradient(12deg,#75472b 0 8px,#8c5935 8px 14px); color:#fff0c4; box-shadow:inset 0 0 0 3px rgba(255,213,143,.13),0 4px 0 rgba(58,35,18,.28); cursor:pointer; }
+.farm-plot.empty { color:#ffe1a1; }
+.farm-plot.growing { background:repeating-linear-gradient(12deg,#5c4427 0 8px,#795935 8px 14px); }
+.farm-plot.ready { border-color:#f1cf69; box-shadow:0 0 0 4px rgba(255,225,115,.34),0 4px 0 rgba(58,35,18,.28); }
+.farm-plot > img { width:58px; height:52px; object-fit:contain; filter:drop-shadow(0 3px 0 rgba(31,20,12,.28)); }
+.farm-plot small { color:#ffe6ad; font-size:10px; }
+.farm-player { position:absolute; z-index:12; transform:translate(-50%,-82%); transition:left .24s ease,top .24s ease; pointer-events:none; }
+.farm-player img { width:54px; height:76px; object-fit:contain; filter:drop-shadow(0 4px 0 rgba(47,28,16,.28)); }
+.farm-choice-panel { position:absolute; z-index:18; left:50%; bottom:12px; transform:translateX(-50%); width:min(92%,620px); min-height:42px; padding:8px 12px; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; border:2px solid #8a5e39; border-radius:12px; background:rgba(255,244,215,.94); color:#4f321f; box-shadow:0 4px 0 rgba(58,35,18,.24); }
 .farm-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
 .farm-actions .secondary-button { padding:6px 8px; font-size:11px; display:inline-flex; align-items:center; gap:4px; }
 .farm-actions .pixel-inline { width:20px; height:20px; }
-.kitchen-station { left: 50%; top: 10%; }
-.storage-station { right: 7%; top: 35%; }
-.register-station { right: 18%; bottom: 10%; }
+.workshop-world { position:relative; width:min(100%,980px); margin:0 auto 82px; aspect-ratio:16/7.3; overflow:hidden; border:4px solid #76502f; border-radius:18px; background:#c5a064; box-shadow:0 7px 0 rgba(65,39,22,.24); }
+.workshop-scene { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.72; filter:saturate(.78) brightness(1.05); }
+.workshop-zone { position:absolute; z-index:5; transform:translate(-50%,-50%); width:23%; min-height:31%; padding:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:3px solid #6d4528; border-radius:16px; background:rgba(255,239,201,.9); color:#4a2f1e; box-shadow:0 5px 0 rgba(58,35,18,.3); cursor:pointer; }
+.workshop-zone img { width:84px; height:94px; object-fit:contain; }
+.workshop-zone small { font-size:10px; color:#76563f; }
+.wood-zone { left:25%; top:48%; }
+.machine-zone { left:51%; top:42%; }
+.tech-zone { left:77%; top:48%; }
+.locked-zone { background:rgba(221,209,184,.9); filter:saturate(.65); }
+.workshop-player { position:absolute; z-index:8; left:50%; top:84%; transform:translate(-50%,-82%); }
+.workshop-player img { width:56px; height:78px; object-fit:contain; filter:drop-shadow(0 4px 0 rgba(47,28,16,.28)); }
+.kitchen-station { left: 52%; top: 10%; }
+.storage-station { right: 16%; top: 36%; }
+.register-station { right: 24%; bottom: 33%; }
+.world-portal { z-index:7; }
+.world-portal img { width:52px; height:70px; }
+.farm-door { left:15%; top:30%; }
+.farm-door img { display:none; }
+.workshop-door { right:14%; top:31%; }
+.closed-curtain { display:none !important; }
 
 .player {
   width: 66px;
@@ -804,7 +826,8 @@ img { image-rendering: pixelated; }
 .tray-chip-count { display:inline-grid; place-items:center; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:#335f54; color:#fff6d1; font-size:12px; font-weight:800; margin-left:6px; }
 @media (max-width: 700px) { .kitchen-summary { grid-template-columns:1fr 1fr; } .customer-avatar { width:100px; min-height:130px; } .customer-sprite { width:82px; height:96px; } }
 @media (max-width: 520px) { .kitchen-summary { grid-template-columns:1fr; } .station small { max-width:66px; font-size:9px; } }
-@media (max-width: 520px) { .farm-grid { grid-template-columns:1fr; } }
+@media (max-width: 520px) { .farm-plot { width:23%; min-height:22%; } .farm-plot > img { width:40px; height:38px; } .farm-choice-panel { bottom:5px; padding:5px; } }
+@media (max-width: 700px) { .farm-world, .workshop-world { aspect-ratio:1.05/1; } .workshop-zone { width:29%; min-height:29%; padding:5px; } .workshop-zone img { width:52px; height:60px; } }
 
 
 .toolbar-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }

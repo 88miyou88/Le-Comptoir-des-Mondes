@@ -1,8 +1,9 @@
-const CACHE_NAME = 'comptoir-des-mondes-v1.3.0';
+const CACHE_NAME = 'comptoir-des-mondes-v1.4.0';
 const ASSETS = [
-  './', './index.html', './style.css?v=1.3.0', './app.js?v=1.3.0', './manifest.json', './assets/icon.svg',
+  './', './index.html', './style.css?v=1.4.0', './app.js?v=1.4.0', './manifest.json', './assets/icon.svg',
   './assets/regions/tavern_interior.png', './assets/player/idle_01.png', './assets/player/walk_01.png', './assets/player/carry_01.png',
-  './assets/furniture/service_counter.png', './assets/furniture/storage_chest.png', './assets/stations/prep_station.png',
+  './assets/furniture/service_counter.png', './assets/furniture/storage_chest.png', './assets/furniture/open_door.png', './assets/stations/prep_station.png',
+  './assets/regions/forest.png', './assets/regions/market.png', './assets/stations/workbench.png', './assets/stations/craft_machine.png', './assets/stations/forge.png',
   './assets/food/vegetables_bundle.png', './assets/food/fruits_basket.png', './assets/food/herbs_bunch.png'
 ];
 
