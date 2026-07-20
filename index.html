@@ -8,7 +8,7 @@
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1.1.0">
+  <link rel="stylesheet" href="style.css?v=1.1.1">
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -76,10 +76,10 @@
 
           <article class="panel-card">
             <div class="panel-heading">
-              <h2>Plateau prêt</h2>
+              <h2>Stock prêt</h2>
               <span id="trayCapacityLabel" class="badge">0/1</span>
             </div>
-            <div id="readyTray" class="ready-tray empty-state">Aucun plat prêt.</div>
+            <small id="traySummary" class="tray-summary-text">Capacité de plats prêts : 0/1</small><div id="readyTray" class="ready-tray empty-state">Aucun plat prêt.</div>
           </article>
         </div>
       </section>
@@ -92,6 +92,7 @@
           </div>
           <span id="kitchenSpeedLabel" class="badge">Vitesse normale</span>
         </div>
+        <div id="kitchenCapacitySummary" class="kitchen-summary"></div>
         <div id="cookingQueue" class="cooking-queue"></div>
         <div id="recipeGrid" class="card-grid"></div>
       </section>
@@ -249,6 +250,6 @@
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=1.1.0"></script>
+  <script src="app.js?v=1.1.1"></script>
 </body>
 </html>

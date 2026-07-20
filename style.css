@@ -473,12 +473,14 @@ img { image-rendering: pixelated; }
   border-radius: 4px;
   font-size: 10px;
   line-height: 1.1;
-  white-space: nowrap;
+  max-width: 78px;
+  text-align: center;
+  white-space: normal;
 }
 .station:active img { transform: translateY(2px); }
-.kitchen-station { left: 55%; top: 8%; }
-.storage-station { right: 5%; top: 36%; }
-.register-station { right: 19%; bottom: 9%; }
+.kitchen-station { left: 50%; top: 10%; }
+.storage-station { right: 7%; top: 35%; }
+.register-station { right: 18%; bottom: 10%; }
 
 .player {
   width: 70px;
@@ -496,22 +498,36 @@ img { image-rendering: pixelated; }
 @keyframes pixelBob { to { transform: translateY(-3px); } }
 
 .customer-avatar {
-  width: 92px;
-  min-height: 122px;
+  width: 108px;
+  min-height: 138px;
   background: transparent;
   border: 0;
+  overflow: visible;
+}
+.customer-avatar::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 236, 169, .35);
+  box-shadow: 0 0 0 2px rgba(113, 164, 109, .25);
+  pointer-events: none;
 }
 .customer-sprite {
   display: block;
-  width: 72px;
-  height: 88px;
+  width: 84px;
+  height: 100px;
   object-fit: contain;
-  margin: 0 auto -7px;
+  margin: 0 auto -6px;
   filter: drop-shadow(0 4px 0 rgba(47,28,16,.28));
 }
 .customer-order {
-  max-width: 112px;
-  padding: 4px 6px;
+  max-width: 124px;
+  padding: 5px 7px;
   border: 2px solid #6e482e;
   border-radius: 6px;
   color: #3c281e;
@@ -712,9 +728,9 @@ img { image-rendering: pixelated; }
 @media (max-width: 780px) {
   .restaurant-world { min-height: 420px; aspect-ratio: 1.15 / 1; }
   .room-art { width: 112%; left: -6%; height: 96%; }
-  .kitchen-station { left: 52%; top: 7%; }
-  .storage-station { right: 1%; top: 34%; }
-  .register-station { right: 12%; bottom: 8%; }
+  .kitchen-station { left: 47%; top: 12%; }
+  .storage-station { right: 6%; top: 35%; }
+  .register-station { right: 16%; bottom: 9%; }
 }
 
 @media (max-width: 480px) {
@@ -730,9 +746,9 @@ img { image-rendering: pixelated; }
   .station small { font-size: 8px; }
   .player { width: 62px; height: 82px; }
   .player-body { width: 60px; height: 80px; }
-  .customer-avatar { width: 78px; }
-  .customer-sprite { width: 62px; height: 78px; }
-  .customer-order { max-width: 95px; font-size: 9px; }
+  .customer-avatar { width: 90px; min-height: 120px; }
+  .customer-sprite { width: 74px; height: 90px; }
+  .customer-order { max-width: 102px; font-size: 10px; }
   .gather-button img { width: 36px; height: 36px; }
   .zone-art, .zone-scene { min-height: 185px; }
   .nav-button { min-height: 60px; }
@@ -749,8 +765,8 @@ img { image-rendering: pixelated; }
   max-width: none;
 }
 .restaurant-world { min-height: 380px; }
-.kitchen-station { left: 54%; top: 21%; }
-.storage-station { right: 3%; top: 37%; }
+.kitchen-station { left: 48%; top: 18%; }
+.storage-station { right: 6%; top: 36%; }
 .register-station { right: 16%; bottom: 10%; }
 
 @media (max-width: 480px) {
@@ -759,7 +775,20 @@ img { image-rendering: pixelated; }
   .brand-copy small { display: block; max-width: 72px; font-size: 8px; line-height: 1.1; }
   .restaurant-world { min-height: 360px; }
   .room-art { left: -17%; width: 134%; }
-  .kitchen-station { left: 51%; top: 18%; }
-  .storage-station { right: 0; top: 37%; }
-  .register-station { right: 10%; bottom: 9%; }
+  .kitchen-station { left: 46%; top: 16%; }
+  .storage-station { right: 5%; top: 36%; }
+  .register-station { right: 14%; bottom: 9%; }
 }
+
+
+.kitchen-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:12px; }
+.kitchen-stat { padding:10px 12px; border:2px solid #a26f43; border-radius:10px; background:#f7e7c8; box-shadow:0 3px 0 rgba(93,60,35,.12); }
+.kitchen-stat small { display:block; color:#7d614a; }
+.kitchen-stat b { font-size:18px; }
+.recipe-meta { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 2px; }
+.mini-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 7px; border:1px solid #b7895a; border-radius:999px; background:#fff6e5; color:#5b3e27; font-size:12px; font-weight:700; }
+.tray-summary-text { display:block; margin:-4px 0 10px; color:#7d614a; }
+.tray-chip { position:relative; }
+.tray-chip-count { display:inline-grid; place-items:center; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:#335f54; color:#fff6d1; font-size:12px; font-weight:800; margin-left:6px; }
+@media (max-width: 700px) { .kitchen-summary { grid-template-columns:1fr 1fr; } .customer-avatar { width:100px; min-height:130px; } .customer-sprite { width:82px; height:96px; } }
+@media (max-width: 520px) { .kitchen-summary { grid-template-columns:1fr; } .station small { max-width:66px; font-size:9px; } }

@@ -1,4 +1,4 @@
-MISE À JOUR 1.1.0 — REFONTE PIXEL ART
+MISE À JOUR 1.1.1 — REFONTE PIXEL ART
 
 1. Décompresse ce ZIP.
 2. Envoie directement son contenu à la racine du dépôt GitHub, au même endroit que index.html.
@@ -22,4 +22,4 @@ Nouveautés :
 - clients en pause quand la taverne est fermée ;
 - tutoriel revu ;
 - notifications limitées à une seule à la fois ;
-- cache PWA versionné en 1.1.0.
+- cache PWA versionné en 1.1.1.

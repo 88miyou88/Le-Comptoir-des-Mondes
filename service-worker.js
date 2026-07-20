@@ -1,4 +1,4 @@
-const CACHE_NAME = 'comptoir-des-mondes-v1.1.0';
+const CACHE_NAME = 'comptoir-des-mondes-v1.1.1';
 const ASSETS = [
   "./",
   "./index.html",

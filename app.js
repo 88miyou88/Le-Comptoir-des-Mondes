@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.1.0';
+  const GAME_VERSION = '1.1.1';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -510,6 +510,35 @@
     renderAll();
   }
 
+  function getReadyRecipeCount(recipeId) {
+    return state.tray.filter(id => id === recipeId).length;
+  }
+
+  function getQueuedRecipeCount(recipeId) {
+    return state.cooking.filter(c => c.recipeId === recipeId).length;
+  }
+
+  function pullReadyCookingToTray(showToast = true) {
+    const effects = getEffects();
+    let changed = false;
+    const remaining = [];
+    state.cooking.forEach(c => {
+      if (c.readyAt <= Date.now() && state.tray.length < effects.trayCapacity) {
+        state.tray.push(c.recipeId);
+        if (showToast) {
+          const recipe = getRecipe(c.recipeId);
+          toast(`${recipe.icon} ${recipe.name} est prêt.`);
+        }
+        changed = true;
+      } else {
+        remaining.push(c);
+      }
+    });
+    state.cooking = remaining;
+    if (changed) saveState();
+    return changed;
+  }
+
   function renderPlayer() {
     el('player').style.left = `${state.player.x * 100}%`;
     el('player').style.top = `${state.player.y * 100}%`;
@@ -522,8 +551,12 @@
 
   function customerSlot(index) {
     const slots = [
-      { x: .29, y: .72 }, { x: .46, y: .38 }, { x: .68, y: .64 },
-      { x: .22, y: .42 }, { x: .55, y: .78 }, { x: .78, y: .36 }
+      { x: .25, y: .70 },
+      { x: .43, y: .38 },
+      { x: .58, y: .33 },
+      { x: .68, y: .57 },
+      { x: .16, y: .54 },
+      { x: .54, y: .73 }
     ];
     return slots[index % slots.length];
   }
@@ -542,6 +575,7 @@
       node.style.left = `${slot.x * 100}%`;
       node.style.top = `${slot.y * 100}%`;
       node.dataset.customerId = customer.id;
+      node.style.zIndex = String(10 + Math.round(slot.y * 100));
       const pct = clamp(customer.patience / customer.maxPatience * 100, 0, 100);
       const color = pct < 28 ? 'var(--danger)' : pct < 55 ? 'var(--yellow)' : 'var(--green)';
       node.innerHTML = `<img class="customer-sprite" src="${assetPath(customer.sprite || CLIENT_SPRITES[customer.typeId] || 'client_red')}" alt="${customer.name}"><span class="customer-order">${recipeImg(recipe, 'pixel-small')}<span>${recipe.name}</span></span><span class="patience-bar"><span style="width:${pct}%;background:${color}"></span></span>`;
@@ -567,24 +601,37 @@
   }
 
   function renderTray() {
+    pullReadyCookingToTray(false);
     const effects = getEffects();
     el('trayCapacityLabel').textContent = `${state.tray.length}/${effects.trayCapacity}`;
+    const summary = el('traySummary');
+    if (summary) summary.textContent = `Capacité de plats prêts : ${state.tray.length}/${effects.trayCapacity}`;
     const tray = el('readyTray');
     if (!state.tray.length) {
       tray.className = 'ready-tray empty-state';
       tray.textContent = 'Aucun plat prêt.';
       return;
     }
+    const counts = {};
+    state.tray.forEach(recipeId => { counts[recipeId] = (counts[recipeId] || 0) + 1; });
     tray.className = 'ready-tray';
-    tray.innerHTML = state.tray.map((recipeId, i) => {
+    tray.innerHTML = Object.entries(counts).map(([recipeId, count]) => {
       const recipe = getRecipe(recipeId);
-      return `<div class="tray-chip" title="Plat ${i + 1}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b></div>`;
+      return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}</div>`;
     }).join('');
   }
 
   function renderKitchen() {
+    pullReadyCookingToTray(false);
     const effects = getEffects();
     el('kitchenSpeedLabel').textContent = effects.prepMultiplier < 0.8 ? 'Cuisine rapide' : effects.prepMultiplier < 1 ? 'Cuisine améliorée' : 'Vitesse normale';
+    const kitchenSummary = el('kitchenCapacitySummary');
+    if (kitchenSummary) {
+      kitchenSummary.innerHTML = `
+        <div class="kitchen-stat"><small>Préparations en cours</small><b>${state.cooking.length}/${effects.cookingSlots}</b></div>
+        <div class="kitchen-stat"><small>Stock prêt</small><b>${state.tray.length}/${effects.trayCapacity}</b></div>
+      `;
+    }
     const queue = el('cookingQueue');
     if (!state.cooking.length) {
       queue.innerHTML = '<div class="panel-card empty-state">Aucune préparation en cours.</div>';
@@ -608,10 +655,16 @@
         const owned = state.inventory[key] || 0;
         return `<span class="resource-chip" title="${ITEMS[key].name}">${itemImg(key)} ${owned}/${amount}</span>`;
       }).join('');
+      const readyCount = getReadyRecipeCount(recipe.id);
+      const queuedCount = getQueuedRecipeCount(recipe.id);
       return `<article class="game-card ${unlocked ? '' : 'locked'}">
         <div class="card-top"><div><div class="card-icon">${unlocked ? recipeImg(recipe, 'pixel-card-icon') : '🔒'}</div><h3>${recipe.name}</h3></div><span class="badge">${recipe.tag}</span></div>
         <p>${unlocked ? `${Math.ceil(effectivePrep / 1000)} s · ${recipe.price} pièces de base` : unlockRecipeText(recipe)}</p>
         <div class="ingredient-row">${ingredients}</div>
+        <div class="recipe-meta">
+          <span class="mini-badge">Prêts : ${readyCount}</span>
+          <span class="mini-badge">En cours : ${queuedCount}</span>
+        </div>
         <div class="card-actions"><button class="primary-button cook-button" data-recipe-id="${recipe.id}" type="button" ${canCookNow ? '' : 'disabled'}>${unlocked ? 'Préparer' : 'Verrouillé'}</button></div>
       </article>`;
     }).join('');
@@ -661,21 +714,7 @@
   }
 
   function processCooking() {
-    const effects = getEffects();
-    let changed = false;
-    const remaining = [];
-    state.cooking.forEach(c => {
-      if (c.readyAt <= Date.now() && state.tray.length < effects.trayCapacity) {
-        state.tray.push(c.recipeId);
-        const recipe = getRecipe(c.recipeId);
-        toast(`${recipe.icon} ${recipe.name} est prêt.`);
-        changed = true;
-      } else {
-        remaining.push(c);
-      }
-    });
-    state.cooking = remaining;
-    if (changed) saveState();
+    pullReadyCookingToTray(true);
   }
 
   function chooseClientType() {
@@ -735,6 +774,7 @@
     const index = state.customers.findIndex(c => c.id === customerId);
     if (index < 0) return false;
     const customer = state.customers[index];
+    pullReadyCookingToTray(false);
     const trayIndex = state.tray.indexOf(customer.recipeId);
     if (trayIndex < 0) {
       if (!automatic) toast(`Il faut préparer ${getRecipe(customer.recipeId).name}.`);

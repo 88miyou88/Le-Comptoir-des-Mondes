@@ -1,4 +1,4 @@
-# Le Comptoir des Mondes — V1.1.0
+# Le Comptoir des Mondes — V1.1.1
 
 Jeu web/PWA mobile en HTML, CSS et JavaScript, hébergeable sur GitHub Pages.
 
@@ -18,6 +18,6 @@ La clé de sauvegarde reste `comptoir_des_mondes_save`. Les anciennes parties re
 - `assets/art-direction.png` : planche de direction artistique ;
 - `assets/asset-library.png` : planche complète des objets de référence.
 
-## V1.1.0
+## V1.1.1
 
 Cette version refond le visuel en pixel art 3/4 et ajoute l'ouverture/fermeture de la taverne. Le système de craft complet reste une étape suivante : pour l'instant, l'atelier prépare surtout les recettes existantes.
