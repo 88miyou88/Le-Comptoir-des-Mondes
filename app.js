@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '1.1.1';
+  const GAME_VERSION = '1.2.0';
   const SAVE_VERSION = 1;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -208,6 +208,17 @@
     helper_counter: 'client_red', helper_kitchen: 'player_carry', ingredient_delivery: 'basket', wood_collector: 'workbench', better_tools: 'workbench',
     market_contacts: 'sign', cold_storage: 'storage_chest', zone_cart: 'service_cart', lucky_charm: 'flowers', smart_schedule: 'craft_machine'
   };
+  const FURNITURE = {
+    table_round: { id: 'table_round', name: 'Table ronde', asset: 'table_round' },
+    chair: { id: 'chair', name: 'Chaise', asset: 'chair' },
+    plant: { id: 'plant', name: 'Plante', asset: 'plant' },
+    crate: { id: 'crate', name: 'Caisse', asset: 'crate' }
+  };
+  const LAYOUT_SLOTS = [
+    { x: .18, y: .74 }, { x: .31, y: .72 }, { x: .45, y: .69 }, { x: .59, y: .66 }, { x: .73, y: .63 },
+    { x: .23, y: .61 }, { x: .37, y: .58 }, { x: .52, y: .55 }, { x: .66, y: .52 },
+    { x: .29, y: .48 }, { x: .43, y: .45 }, { x: .58, y: .43 }
+  ];
 
   function assetPath(name) { return `${ASSET_BASE}${name}.png`; }
   function pixelImg(name, alt = '', className = 'pixel-inline') {
@@ -254,7 +265,9 @@
       minigame: { level: 1, bestLevel: 1 },
       lastSavedAt: 0,
       tutorialSeen: false,
-      restaurantOpen: true
+      restaurantOpen: true,
+      decorInventory: { table_round: 1, chair: 2, plant: 1, crate: 1 },
+      placedFurniture: []
     };
   }
 
@@ -268,6 +281,8 @@
   let lastSecondTick = 0;
   let automationTimers = { delivery: Date.now(), wood: Date.now(), helper: Date.now(), kitchen: Date.now() };
   let mini = null;
+  let layoutEditing = false;
+  let selectedFurnitureId = null;
 
   const el = id => document.getElementById(id);
   const fmt = n => Math.floor(Number(n || 0)).toLocaleString('fr-FR');
@@ -297,7 +312,9 @@
       stats: { ...base.stats, ...(raw.stats || {}) },
       zoneXP: { ...base.zoneXP, ...(raw.zoneXP || {}) },
       cooldowns: { ...(raw.cooldowns || {}) },
-      minigame: { ...base.minigame, ...(raw.minigame || {}) }
+      minigame: { ...base.minigame, ...(raw.minigame || {}) },
+      decorInventory: { ...base.decorInventory, ...(raw.decorInventory || {}) },
+      placedFurniture: Array.isArray(raw.placedFurniture) ? raw.placedFurniture : base.placedFurniture
     };
     merged.saveVersion = SAVE_VERSION;
     merged.gameVersion = GAME_VERSION;
@@ -486,14 +503,18 @@
     const button = el('toggleRestaurant');
     const curtain = el('closedCurtain');
     const label = el('restaurantStateLabel');
+    const layoutButton = el('toggleLayoutEditor');
     if (!card || !button || !curtain || !label) return;
     card.classList.toggle('closed', !state.restaurantOpen);
     curtain.hidden = state.restaurantOpen;
     label.textContent = state.restaurantOpen ? 'Taverne ouverte' : 'Taverne fermée';
     button.textContent = state.restaurantOpen ? 'Fermer la taverne' : 'Ouvrir la taverne';
-    el('worldStatus').textContent = state.restaurantOpen
-      ? 'La taverne est ouverte : prépare et sers les commandes.'
-      : 'Taverne fermée : cuisine, collecte et améliore sans pression.';
+    el('worldStatus').textContent = layoutEditing
+      ? 'Mode agencement : choisis un meuble puis touche un emplacement pour le poser.'
+      : (state.restaurantOpen
+        ? 'La taverne est ouverte : prépare et sers les commandes.'
+        : 'Taverne fermée : cuisine, collecte et améliore sans pression.');
+    if (layoutButton) layoutButton.textContent = layoutEditing ? "Finir l'agencement" : "Agencer";
   }
 
   function toggleRestaurant() {
@@ -508,6 +529,144 @@
     }
     saveState();
     renderAll();
+  }
+
+
+  function toggleLayoutEditor() {
+    layoutEditing = !layoutEditing;
+    selectedFurnitureId = null;
+    el('layoutEditorPanel').hidden = !layoutEditing;
+    el('layoutGrid').hidden = !layoutEditing;
+    if (layoutEditing) toast('Mode agencement activé.');
+    else toast('Agencement enregistré.');
+    renderAll();
+  }
+
+  function getPlacedFurnitureAt(slotIndex) {
+    return state.placedFurniture.find(item => item.slotIndex === slotIndex);
+  }
+
+  function removeFurniture(itemUniqueId) {
+    const index = state.placedFurniture.findIndex(item => item.uid === itemUniqueId);
+    if (index < 0) return;
+    const [item] = state.placedFurniture.splice(index, 1);
+    state.decorInventory[item.furnitureId] = (state.decorInventory[item.furnitureId] || 0) + 1;
+    saveState();
+    renderAll();
+    toast(`${FURNITURE[item.furnitureId].name} rangé.`);
+  }
+
+  function placeFurnitureOnSlot(slotIndex) {
+    if (!layoutEditing || !selectedFurnitureId) return;
+    if (getPlacedFurnitureAt(slotIndex)) {
+      toast('Cet emplacement est déjà occupé.');
+      return;
+    }
+    if ((state.decorInventory[selectedFurnitureId] || 0) <= 0) {
+      toast("Tu n'as plus cet objet à poser.");
+      return;
+    }
+    state.decorInventory[selectedFurnitureId] -= 1;
+    state.placedFurniture.push({
+      uid: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      furnitureId: selectedFurnitureId,
+      slotIndex
+    });
+    saveState();
+    renderAll();
+    toast(`${FURNITURE[selectedFurnitureId].name} placé.`);
+  }
+
+  function renderFurnitureLayer() {
+    const layer = el('furnitureLayer');
+    const grid = el('layoutGrid');
+    if (!layer || !grid) return;
+    layer.innerHTML = '';
+    state.placedFurniture.forEach(item => {
+      const slot = LAYOUT_SLOTS[item.slotIndex];
+      const furn = FURNITURE[item.furnitureId];
+      if (!slot || !furn) return;
+      const node = document.createElement(layoutEditing ? 'button' : 'div');
+      if (layoutEditing) node.type = 'button';
+      node.className = `furniture-item ${item.furnitureId}`;
+      node.style.left = `${slot.x * 100}%`;
+      node.style.top = `${slot.y * 100}%`;
+      node.style.zIndex = String(5 + Math.round(slot.y * 100));
+      node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}">`;
+      if (layoutEditing) {
+        node.title = `${furn.name} — toucher pour retirer`;
+        node.classList.add('selected-item');
+        node.addEventListener('pointerdown', event => {
+          event.stopPropagation();
+          removeFurniture(item.uid);
+        });
+      }
+      layer.appendChild(node);
+    });
+    grid.hidden = !layoutEditing;
+    grid.innerHTML = '';
+    if (layoutEditing) {
+      LAYOUT_SLOTS.forEach((slot, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'layout-slot';
+        if (getPlacedFurnitureAt(index)) button.classList.add('occupied');
+        if (selectedFurnitureId) button.classList.add('selected');
+        button.style.left = `${slot.x * 100}%`;
+        button.style.top = `${slot.y * 100}%`;
+        button.style.zIndex = String(4 + Math.round(slot.y * 100));
+        button.addEventListener('pointerdown', event => {
+          event.stopPropagation();
+          placeFurnitureOnSlot(index);
+        });
+        grid.appendChild(button);
+      });
+    }
+  }
+
+  function renderLayoutEditor() {
+    const panel = el('layoutEditorPanel');
+    if (!panel) return;
+    panel.hidden = !layoutEditing;
+    if (!layoutEditing) { panel.innerHTML = ''; return; }
+    const selected = selectedFurnitureId ? FURNITURE[selectedFurnitureId]?.name : 'aucun';
+    panel.innerHTML = `
+      <h3>Agencement libre</h3>
+      <p>Choisis un meuble ci-dessous, puis touche un emplacement vert dans la taverne pour le poser. Touche un meuble posé pour le retirer.</p>
+      <div class="layout-chip">Sélection : <b>${selected}</b></div>
+      <div class="layout-palette">
+        ${Object.values(FURNITURE).map(item => `
+          <button type="button" class="layout-card ${selectedFurnitureId === item.id ? 'active' : ''}" data-layout-item="${item.id}">
+            <img src="${assetPath(item.asset)}" alt="${item.name}">
+            <b>${item.name}</b>
+            <small>Disponibles : ${state.decorInventory[item.id] || 0}</small>
+          </button>`).join('')}
+      </div>
+      <div class="layout-controls">
+        <button type="button" id="clearLayoutSelection" class="secondary-button">Effacer la sélection</button>
+      </div>
+    `;
+    panel.querySelectorAll('[data-layout-item]').forEach(button => button.addEventListener('click', () => {
+      selectedFurnitureId = button.dataset.layoutItem;
+      renderLayoutEditor();
+      renderFurnitureLayer();
+    }));
+    panel.querySelector('#clearLayoutSelection')?.addEventListener('click', () => {
+      selectedFurnitureId = null;
+      renderLayoutEditor();
+      renderFurnitureLayer();
+    });
+  }
+
+  function discardTrayRecipe(recipeId) {
+    pullReadyCookingToTray(false);
+    const index = state.tray.indexOf(recipeId);
+    if (index < 0) return;
+    const recipe = getRecipe(recipeId);
+    state.tray.splice(index, 1);
+    saveState();
+    renderAll();
+    toast(`${recipe.name} jeté à la poubelle.`);
   }
 
   function getReadyRecipeCount(recipeId) {
@@ -617,8 +776,12 @@
     tray.className = 'ready-tray';
     tray.innerHTML = Object.entries(counts).map(([recipeId, count]) => {
       const recipe = getRecipe(recipeId);
-      return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}</div>`;
+      return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}<span class="tray-actions"><button class="mini-icon-button discard-chip" data-recipe-id="${recipe.id}" type="button" title="Jeter ce plat">🗑️</button></span></div>`;
     }).join('');
+    tray.querySelectorAll('.discard-chip').forEach(button => button.addEventListener('click', event => {
+      event.stopPropagation();
+      discardTrayRecipe(button.dataset.recipeId);
+    }));
   }
 
   function renderKitchen() {
@@ -642,7 +805,8 @@
         const left = Math.max(0, c.readyAt - Date.now());
         const pct = clamp((1 - left / duration) * 100, 0, 100);
         const ready = left <= 0;
-        return `<div class="cooking-item"><span class="card-icon">${recipeImg(recipe, 'pixel-card-icon')}</span><div><b>${recipe.name}</b><div class="cooking-progress"><span style="width:${pct}%"></span></div></div><small>${ready ? 'Prêt' : `${Math.ceil(left / 1000)} s`}</small></div>`;
+        const waitingStock = ready && state.tray.length >= effects.trayCapacity;
+        return `<div class="cooking-item ${waitingStock ? 'waiting-stock' : ''}"><span class="card-icon">${recipeImg(recipe, 'pixel-card-icon')}</span><div><b>${recipe.name}</b><div class="cooking-progress"><span style="width:${pct}%"></span></div></div><small>${ready ? (waitingStock ? 'Prêt · stock plein' : 'Prêt') : `${Math.ceil(left / 1000)} s`}</small></div>`;
       }).join('');
     }
 
@@ -1116,13 +1280,15 @@
   function setupWorldControls() {
     const world = el('restaurantWorld');
     world.addEventListener('pointerdown', event => {
-      if (event.target.closest('.customer-avatar') || event.target.closest('.station')) return;
+      if (layoutEditing) return;
+      if (event.target.closest('.customer-avatar') || event.target.closest('.station') || event.target.closest('.furniture-item') || event.target.closest('.layout-slot')) return;
       world.setPointerCapture?.(event.pointerId);
       const point = pointFromEvent(event);
       followPointerActive = state.settings.movementMode === 'follow';
       moveTo(point.x, point.y);
     });
     world.addEventListener('pointermove', event => {
+      if (layoutEditing) return;
       if (state.settings.movementMode !== 'follow' || !followPointerActive) return;
       const point = pointFromEvent(event);
       moveTo(point.x, point.y, null, false);
@@ -1132,6 +1298,7 @@
     world.addEventListener('pointercancel', endFollow);
     document.querySelectorAll('.station').forEach(station => {
       station.addEventListener('pointerdown', event => {
+        if (layoutEditing) return;
         event.stopPropagation();
         const map = {
           kitchen: { x: .58, y: .30, tab: 'kitchen' },
@@ -1411,6 +1578,8 @@
     renderHUD();
     renderActiveGoal();
     renderRestaurantState();
+    renderFurnitureLayer();
+    renderLayoutEditor();
     renderPlayer();
     renderCustomers();
     renderTray();
@@ -1429,6 +1598,7 @@
     el('goalShortcut').addEventListener('click', () => switchTab('objectives'));
     el('contextAction').addEventListener('click', () => switchTab('kitchen'));
     el('toggleRestaurant').addEventListener('click', toggleRestaurant);
+    el('toggleLayoutEditor').addEventListener('click', toggleLayoutEditor);
     document.querySelectorAll('[data-upgrade-filter]').forEach(button => button.addEventListener('click', () => {
       upgradeFilter = button.dataset.upgradeFilter;
       document.querySelectorAll('[data-upgrade-filter]').forEach(b => b.classList.toggle('active', b === button));

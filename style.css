@@ -442,11 +442,11 @@ img { image-rendering: pixelated; }
 }
 .room-art {
   position: absolute;
-  inset: 1.5% 1.5% 0;
+  inset: 1.5%;
   width: 97%;
   height: 97%;
   object-fit: contain;
-  object-position: center bottom;
+  object-position: center center;
   pointer-events: none;
   filter: drop-shadow(0 8px 0 rgba(61,36,20,.18));
 }
@@ -483,13 +483,13 @@ img { image-rendering: pixelated; }
 .register-station { right: 18%; bottom: 10%; }
 
 .player {
-  width: 70px;
-  height: 90px;
+  width: 66px;
+  height: 86px;
   z-index: 12;
 }
 .player-body {
-  width: 68px;
-  height: 88px;
+  width: 64px;
+  height: 84px;
   object-fit: contain;
   filter: drop-shadow(0 4px 0 rgba(48,28,16,.32));
 }
@@ -498,8 +498,8 @@ img { image-rendering: pixelated; }
 @keyframes pixelBob { to { transform: translateY(-3px); } }
 
 .customer-avatar {
-  width: 108px;
-  min-height: 138px;
+  width: 116px;
+  min-height: 136px;
   background: transparent;
   border: 0;
   overflow: visible;
@@ -508,9 +508,22 @@ img { image-rendering: pixelated; }
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 32px;
+  top: 16px;
   transform: translateX(-50%);
-  width: 48px;
+  width: 84px;
+  height: 92px;
+  border-radius: 32px;
+  background: rgba(255, 249, 239, .28);
+  box-shadow: 0 0 0 2px rgba(255, 244, 221, .48);
+  pointer-events: none;
+}
+.customer-avatar::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 31px;
+  transform: translateX(-50%);
+  width: 50px;
   height: 14px;
   border-radius: 50%;
   background: rgba(255, 236, 169, .35);
@@ -519,15 +532,15 @@ img { image-rendering: pixelated; }
 }
 .customer-sprite {
   display: block;
-  width: 84px;
-  height: 100px;
+  width: 68px;
+  height: 84px;
   object-fit: contain;
-  margin: 0 auto -6px;
+  margin: 10px auto -3px;
   filter: drop-shadow(0 4px 0 rgba(47,28,16,.28));
 }
 .customer-order {
   max-width: 124px;
-  padding: 5px 7px;
+  padding: 6px 8px;
   border: 2px solid #6e482e;
   border-radius: 6px;
   color: #3c281e;
@@ -755,29 +768,17 @@ img { image-rendering: pixelated; }
   .nav-button img { width: 30px; height: 30px; }
 }
 
-/* Ajustements après test mobile V1.1 */
-.room-art {
-  top: auto;
-  bottom: 0;
-  left: -6%;
-  width: 112%;
-  height: auto;
-  max-width: none;
-}
-.restaurant-world { min-height: 380px; }
-.kitchen-station { left: 48%; top: 18%; }
-.storage-station { right: 6%; top: 36%; }
-.register-station { right: 16%; bottom: 10%; }
-
 @media (max-width: 480px) {
   .brand-logo { width: 88px; height: 48px; }
   .brand-copy strong { display: none; }
   .brand-copy small { display: block; max-width: 72px; font-size: 8px; line-height: 1.1; }
   .restaurant-world { min-height: 360px; }
-  .room-art { left: -17%; width: 134%; }
+  .room-art { left: 0; width: 100%; height: 100%; }
   .kitchen-station { left: 46%; top: 16%; }
   .storage-station { right: 5%; top: 36%; }
   .register-station { right: 14%; bottom: 9%; }
+  .customer-avatar { width: 106px; min-height: 128px; }
+  .customer-sprite { width: 60px; height: 74px; margin-top: 12px; }
 }
 
 
@@ -792,3 +793,34 @@ img { image-rendering: pixelated; }
 .tray-chip-count { display:inline-grid; place-items:center; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:#335f54; color:#fff6d1; font-size:12px; font-weight:800; margin-left:6px; }
 @media (max-width: 700px) { .kitchen-summary { grid-template-columns:1fr 1fr; } .customer-avatar { width:100px; min-height:130px; } .customer-sprite { width:82px; height:96px; } }
 @media (max-width: 520px) { .kitchen-summary { grid-template-columns:1fr; } .station small { max-width:66px; font-size:9px; } }
+
+
+.toolbar-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.wood-button.alt { background: linear-gradient(#7f6146, #5d4533); border-color:#b68a60; }
+.furniture-layer, .layout-grid { position:absolute; inset:0; }
+.furniture-item { position:absolute; transform:translate(-50%, -50%); border:0; background:transparent; padding:0; cursor:pointer; }
+.furniture-item img { display:block; object-fit:contain; filter: drop-shadow(0 4px 0 rgba(47,28,16,.22)); }
+.furniture-item.table_round img { width:72px; height:54px; }
+.furniture-item.chair img { width:36px; height:52px; }
+.furniture-item.plant img { width:44px; height:44px; }
+.furniture-item.crate img { width:46px; height:42px; }
+.furniture-item.selected-item::after { content:""; position:absolute; inset:-8px; border:2px dashed #f6e0a6; border-radius:10px; pointer-events:none; }
+.layout-grid[hidden] { display:none; }
+.layout-slot { position:absolute; transform:translate(-50%, -50%); width:42px; height:24px; border-radius:50%; border:1px dashed rgba(255,246,213,.9); background:rgba(69,117,91,.18); box-shadow:0 0 0 2px rgba(42,58,46,.18); }
+.layout-slot.occupied { background:rgba(175,113,74,.18); }
+.layout-slot.selected { border-color:#ffeab7; background:rgba(214,170,91,.32); }
+.layout-editor-panel { margin-top:12px; border:3px solid #8a5e39; border-radius:16px; background:#f5e3c3; box-shadow:0 6px 0 rgba(65,39,22,.16); padding:14px; }
+.layout-editor-panel h3 { margin:0 0 6px; }
+.layout-editor-panel p { margin:0 0 10px; color:#6d523f; }
+.layout-palette { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px,1fr)); gap:10px; margin-top:10px; }
+.layout-card { border:2px solid #af7a49; border-radius:12px; background:#fff7e8; padding:10px; text-align:center; cursor:pointer; }
+.layout-card.active { box-shadow:0 0 0 3px rgba(66,108,91,.22); border-color:#2e5b4f; }
+.layout-card img { width:58px; height:58px; object-fit:contain; }
+.layout-card small { display:block; color:#6b5340; }
+.layout-controls { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.layout-chip { display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px; background:#fff5df; border:1px solid #c79b66; font-weight:700; }
+.tray-chip { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.tray-actions { margin-left:auto; display:flex; gap:6px; }
+.mini-icon-button { border:1px solid #ab7a4a; background:#fff5e2; border-radius:8px; padding:4px 6px; font-size:14px; cursor:pointer; }
+.cooking-item.waiting-stock small { color:#8b5a35; font-weight:700; }
+@media (max-width: 700px) { .toolbar-actions { width:100%; justify-content:stretch; } .toolbar-actions .wood-button { flex:1; min-width:0; } }

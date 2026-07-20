@@ -1,9 +1,9 @@
-const CACHE_NAME = 'comptoir-des-mondes-v1.1.1';
+const CACHE_NAME = 'comptoir-des-mondes-v1.2.0';
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=1.1.0",
-  "./app.js?v=1.1.0",
+  "./style.css?v=1.2.0",
+  "./app.js?v=1.2.0",
   "./manifest.json",
   "./assets/icon.svg",
   "./assets/pixel/apple_crate.png",
@@ -16,6 +16,7 @@ const ASSETS = [
   "./assets/pixel/cash_register.png",
   "./assets/pixel/chalkboard.png",
   "./assets/pixel/cheese.png",
+  "./assets/pixel/chair.png",
   "./assets/pixel/client_cat.png",
   "./assets/pixel/client_dwarf.png",
   "./assets/pixel/client_elder.png",
@@ -82,6 +83,7 @@ const ASSETS = [
   "./assets/pixel/storage_chest.png",
   "./assets/pixel/stove.png",
   "./assets/pixel/sugar.png",
+  "./assets/pixel/table_round.png",
   "./assets/pixel/tart.png",
   "./assets/pixel/tile_cream.png",
   "./assets/pixel/tile_stone.png",
