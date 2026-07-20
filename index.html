@@ -8,7 +8,7 @@
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=2.0.0-build5">
+  <link rel="stylesheet" href="style.css?v=3.0.0-build1">
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -17,7 +17,7 @@
         <img class="brand-logo" src="assets/icon.svg" alt="Le Comptoir des Mondes">
         <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small><span id="versionLabel">V2.0.0</span> · Le domaine vivant</small>
+          <small><span id="versionLabel">V3.0.0</span> · L’atelier vivant</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
@@ -42,7 +42,7 @@
         <div class="world-card tavern-frame">
           <div class="tavern-toolbar">
             <div class="open-state"><span id="restaurantLamp" class="lamp-dot"></span><b id="restaurantStateLabel">Taverne ouverte</b></div>
-            <div class="toolbar-actions"><button id="toggleLayoutEditor" class="wood-button alt" type="button">Agencer</button><button id="toggleRestaurant" class="wood-button" type="button">Fermer la taverne</button></div>
+            <div class="toolbar-actions"><span class="fixed-room-label">Salle évolutive · placement automatique</span><button id="toggleRestaurant" class="wood-button" type="button">Fermer la taverne</button></div>
           </div>
           <div id="restaurantWorld" class="restaurant-world" aria-label="Taverne et cuisine en vue trois-quarts">
             <img class="room-art" src="assets/regions/tavern_interior.png" alt="Intérieur pixel art de la taverne et de sa cuisine">
@@ -143,13 +143,13 @@
         <div class="workshop-world">
           <img class="workshop-scene" src="assets/regions/market.png" alt="Cour de fabrication du Comptoir">
           <button class="workshop-zone wood-zone" data-open-tab="carpentry" type="button"><img src="assets/stations/workbench.png" alt=""><b>Menuiserie</b><small>Meubles et décorations</small></button>
-          <button class="workshop-zone machine-zone" data-open-tab="industry" type="button"><img src="assets/stations/craft_machine.png" alt=""><b>Production</b><small>Matériaux et composants</small></button>
+          <button class="workshop-zone machine-zone" data-open-tab="industry" type="button"><img src="assets/stations/craft_machine.png" alt=""><b>Salle des machines</b><small>Produire, accélérer, récupérer</small></button>
           <button class="workshop-zone tech-zone" data-open-tab="technology" type="button"><img src="assets/stations/forge.png" alt=""><b>Technologies</b><small>Électricité, robots et IA</small></button>
           <div class="workshop-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
         </div>
         <div id="domainSummary" class="domain-summary"></div>
         <div class="hub-link-grid">
-          <button class="hub-link" data-open-tab="upgrades" type="button"><img src="assets/stations/oven.png" alt=""><span><b>Salle des machines</b><small>Installer et améliorer les équipements</small></span></button>
+          <button class="hub-link" data-open-tab="upgrades" type="button"><img src="assets/stations/oven.png" alt=""><span><b>Améliorations</b><small>Service, cuisine et automatisation</small></span></button>
           <button class="hub-link" data-open-tab="staff" type="button"><img src="assets/npcs/tavern_worker_female_01.png" alt=""><span><b>Équipe</b><small>Recruter et affecter les employés</small></span></button>
           <button class="hub-link" data-open-tab="shop" type="button"><img src="assets/stations/display_case.png" alt=""><span><b>Boutique</b><small>Produits emballés et souvenirs</small></span></button>
           <button class="hub-link" data-open-tab="progress" type="button"><img src="assets/building/hanging_sign.png" alt=""><span><b>Domaine</b><small>Niveaux, établissements et statistiques</small></span></button>
@@ -157,15 +157,21 @@
       </section>
 
       <section id="tab-carpentry" class="tab-panel" data-tab-panel="carpentry">
-        <div class="section-header"><div><h1>Salle de menuiserie</h1><p>Transforme les matériaux en meubles réellement disponibles dans l’agencement.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
+        <div class="section-header"><div><h1>Salle de menuiserie</h1><p>Chaque table ou chaise récupérée rejoint automatiquement sa place dans la salle de service.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
         <div class="specialist-room carpentry-room"><img src="assets/stations/workbench.png" alt="Établi de menuiserie"><div><h2>Établi principal</h2><p>Tables, chaises, rangements, tapis et postes de travail sont fabriqués ici.</p><span id="carpentryLevelBadge" class="badge">Niveau 1</span></div></div>
         <div id="carpentryQueue" class="production-queue"></div>
         <div id="carpentryGrid" class="craft-grid"></div>
       </section>
 
       <section id="tab-industry" class="tab-panel" data-tab-panel="industry">
-        <div class="section-header"><div><h1>Salle de production</h1><p>Transforme les ressources brutes, fabrique les composants puis construis les machines.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
-        <div class="specialist-room industry-room"><img src="assets/stations/craft_machine.png" alt="Machine de production"><div><h2>Chaîne artisanale</h2><p>Les files, la vitesse et le rendement progressent avec les machines, l’équipe et les technologies.</p><span id="industryCapacityBadge" class="badge">1 file</span></div></div>
+        <div class="section-header"><div><h1>Salle des machines</h1><p>Les postes apparaissent à leur emplacement définitif quand tu les construis. Touche une machine pour accélérer son travail.</p></div><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour</button></div>
+        <div id="atelierNextGoal" class="atelier-next-goal"></div>
+        <div id="machineRoomWorld" class="machine-room-world" aria-label="Salle des machines évolutive">
+          <img class="machine-room-scene" src="assets/regions/tavern_interior.png" alt="Salle des machines">
+          <div id="machineRoomSlots" class="machine-room-slots"></div>
+          <div id="machineRoomPlayer" class="machine-room-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
+          <div class="machine-room-help">Touchez une production prête pour marcher jusqu’à elle et la récupérer.</div>
+        </div>
         <div id="industryQueue" class="production-queue"></div>
         <div id="industryFilters" class="filter-row"></div>
         <div id="industryGrid" class="craft-grid"></div>
@@ -201,8 +207,8 @@
       <section id="tab-upgrades" class="tab-panel" data-tab-panel="upgrades">
         <div class="section-header">
           <div>
-            <h1>Salle des machines</h1>
-            <p>Construis et améliore les équipements du service, de la cuisine et de la collecte.</p>
+            <h1>Améliorations du domaine</h1>
+            <p>Améliore le service, la cuisine et l’automatisation sans déplacer les décors.</p>
           </div>
           <div class="filter-row">
             <button class="filter-chip active" data-upgrade-filter="all" type="button">Toutes</button>
@@ -211,7 +217,7 @@
             <button class="filter-chip" data-upgrade-filter="automation" type="button">Auto</button>
           </div>
         </div>
-        <div class="machine-room-banner specialist-room"><img src="assets/stations/craft_machine.png" alt="Machine de fabrication"><div><h2>Poste mécanique</h2><p>Fours, stockage, automatisation et futures machines sont construits dans cette salle.</p><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour de fabrication</button></div></div>
+        <div class="machine-room-banner specialist-room"><img src="assets/stations/craft_machine.png" alt="Machine de fabrication"><div><h2>Plans d’amélioration</h2><p>La réputation améliore surtout les ventes et la clientèle ; les vrais déblocages viennent désormais des matériaux, des plans et des machines.</p><button class="secondary-button" data-open-tab="workshop" type="button">Retour à la cour de fabrication</button></div></div>
         <div id="upgradeGrid" class="card-grid"></div>
       </section>
 
@@ -344,7 +350,7 @@
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div>
   <div id="modalLayer" class="modal-layer" hidden></div>
 
-  <script src="app.js?v=2.0.0-build5"></script>
-  <script src="expansion.js?v=2.0.0-build5"></script>
+  <script src="app.js?v=3.0.0-build1"></script>
+  <script src="expansion.js?v=3.0.0-build1"></script>
 </body>
 </html>

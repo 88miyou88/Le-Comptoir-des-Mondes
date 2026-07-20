@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '2.0.0';
-  const SAVE_VERSION = 2;
+  const GAME_VERSION = '3.0.0';
+  const SAVE_VERSION = 3;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
 
@@ -29,13 +29,13 @@
     { id: 'toast', name: 'Tartine simple', icon: '🍞', prep: 5, price: 18, rep: 1, ingredients: { bread: 1 }, unlock: () => true, tag: 'Rapide' },
     { id: 'cheese_sandwich', name: 'Sandwich fromage', icon: '🥪', prep: 7, price: 32, rep: 2, ingredients: { bread: 1, cheese: 1 }, unlock: () => true, tag: 'Classique' },
     { id: 'sweet_coffee', name: 'Café sucré', icon: '☕', prep: 4, price: 24, rep: 1, ingredients: { coffee: 1, sugar: 1 }, unlock: () => true, tag: 'Pressés' },
-    { id: 'salad', name: 'Salade croquante', icon: '🥗', prep: 8, price: 42, rep: 3, ingredients: { vegetables: 2 }, unlock: s => s.reputation >= 30, tag: 'Réputation' },
+    { id: 'salad', name: 'Salade croquante', icon: '🥗', prep: 8, price: 42, rep: 3, ingredients: { vegetables: 2 }, unlock: () => true, tag: 'Cuisine fraîche' },
     { id: 'fruit_tart', name: 'Tarte aux fruits', icon: '🥧', prep: 13, price: 76, rep: 4, ingredients: { fruits: 2, sugar: 1 }, unlock: s => hasUpgrade(s, 'oven'), tag: 'Rentable' },
     { id: 'forest_soup', name: 'Soupe forestière', icon: '🍲', prep: 12, price: 85, rep: 5, ingredients: { mushrooms: 2, vegetables: 1 }, unlock: s => s.unlockedZones.includes('forest'), tag: 'Forêt' },
-    { id: 'spicy_skewer', name: 'Brochette épicée', icon: '🍢', prep: 11, price: 92, rep: 4, ingredients: { vegetables: 1, spices: 1 }, unlock: s => s.reputation >= 150, tag: 'Touristes' },
+    { id: 'spicy_skewer', name: 'Brochette épicée', icon: '🍢', prep: 11, price: 92, rep: 4, ingredients: { vegetables: 1, spices: 1 }, unlock: s => s.unlockedZones.includes('forest'), tag: 'Forêt' },
     { id: 'grilled_fish', name: 'Poisson grillé', icon: '🐟', prep: 16, price: 140, rep: 7, ingredients: { fish: 2, spices: 1, salt: 1 }, unlock: s => s.unlockedZones.includes('sea'), tag: 'Premium' },
     { id: 'display_dessert', name: 'Dessert vitrine', icon: '🍰', prep: 15, price: 165, rep: 8, ingredients: { fruits: 2, sugar: 2 }, unlock: s => hasUpgrade(s, 'display_case'), tag: 'Vitrine' },
-    { id: 'counter_menu', name: 'Menu du comptoir', icon: '🍱', prep: 18, price: 190, rep: 9, ingredients: { bread: 1, cheese: 1, coffee: 1 }, unlock: s => s.reputation >= 420, tag: 'Commande spéciale' }
+    { id: 'counter_menu', name: 'Menu du comptoir', icon: '🍱', prep: 18, price: 190, rep: 9, ingredients: { bread: 1, cheese: 1, coffee: 1 }, unlock: s => (s.expansion?.machines || []).includes('mill'), tag: 'Atelier' }
   ];
 
   const CLIENT_TYPES = [
@@ -213,6 +213,18 @@
   const CLIENT_SPRITES = {
     classic: 'client_red', student: 'client_cat', rushed: 'client_dwarf', foodie: 'client_elder', tourist: 'client_red', mystery: 'client_cat', inspector: 'client_elder'
   };
+  const CLIENT_VISUAL_KIND = {
+    classic: 'red', student: 'cat', rushed: 'dwarf', foodie: 'elder', tourist: 'red', mystery: 'cat', inspector: 'elder'
+  };
+  const CLIENT_STANDING_PATHS = {
+    red: ['assets/clients/client_red_haired_01.png', 'assets/clients/client_red_haired_02.png', 'assets/clients/client_red_haired_03.png'],
+    cat: ['assets/clients/client_cat_01.png', 'assets/clients/client_cat_02.png', 'assets/clients/client_cat_03.png'],
+    dwarf: ['assets/clients/client_dwarf_01.png', 'assets/clients/client_dwarf_02.png', 'assets/clients/client_dwarf_03.png'],
+    elder: ['assets/clients/client_elder_01.png', 'assets/clients/client_elder_02.png', 'assets/clients/client_elder_03.png']
+  };
+  const CLIENT_SEATED_PATHS = Object.fromEntries(['red', 'cat', 'dwarf', 'elder'].flatMap(kind =>
+    ['back_left', 'back_right', 'front_left', 'front_right'].map(orientation => [`${kind}:${orientation}`, `assets/clients/seated/${kind}_${orientation}.png`])
+  ));
   const ZONE_ART = { quarter: 'zone_market', forest: 'zone_forest', mine: 'zone_mine', sea: 'zone_sea' };
   const UPGRADE_ASSETS = {
     counter_2: 'service_counter', counter_3: 'service_counter', counter_4: 'floor_dark', cutting_board: 'cutting_board', coffee_machine: 'coffee_machine',
@@ -238,19 +250,27 @@
     forge_station: { id: 'forge_station', name: 'Forge', asset: 'forge', radius: .07 },
     craft_station: { id: 'craft_station', name: 'Machine de craft', asset: 'craft_machine', radius: .07 }
   };
-  const LAYOUT_SLOTS = [
-    { x: .30, y: .49 }, { x: .40, y: .49 }, { x: .50, y: .49 }, { x: .60, y: .49 }, { x: .70, y: .49 },
-    { x: .22, y: .57 }, { x: .31, y: .57 }, { x: .40, y: .57 }, { x: .50, y: .57 }, { x: .60, y: .57 }, { x: .69, y: .57 }, { x: .78, y: .57 },
-    { x: .20, y: .64 }, { x: .30, y: .64 }, { x: .40, y: .64 }, { x: .50, y: .64 }, { x: .60, y: .64 }, { x: .70, y: .64 }, { x: .80, y: .64 },
-    { x: .29, y: .71 }, { x: .37, y: .71 }, { x: .45, y: .71 }, { x: .55, y: .71 }, { x: .63, y: .71 }, { x: .71, y: .71 }
+  const SERVICE_TABLE_SLOTS = [
+    { id: 'table-1', x: .38, y: .68 }, { id: 'table-2', x: .64, y: .68 },
+    { id: 'table-3', x: .47, y: .54 }, { id: 'table-4', x: .73, y: .55 }
   ];
-  const DEFAULT_PLACED_FURNITURE = [
-    { uid: 'd-table', furnitureId: 'table_round', x: .42, y: .62 },
-    { uid: 'd-chair-a', furnitureId: 'chair', x: .33, y: .64 },
-    { uid: 'd-chair-b', furnitureId: 'chair', x: .51, y: .66 },
-    { uid: 'd-shelf', furnitureId: 'shelf', x: .72, y: .51 },
-    { uid: 'd-chest', furnitureId: 'chest', x: .74, y: .70 }
+  const SERVICE_SEAT_SLOTS = [
+    { id: 'seat-1', tableIndex: 0, x: .30, y: .69, orientation: 'front_right' },
+    { id: 'seat-2', tableIndex: 0, x: .47, y: .72, orientation: 'back_left' },
+    { id: 'seat-3', tableIndex: 1, x: .56, y: .69, orientation: 'front_right' },
+    { id: 'seat-4', tableIndex: 1, x: .73, y: .72, orientation: 'back_left' },
+    { id: 'seat-5', tableIndex: 2, x: .39, y: .55, orientation: 'front_right' },
+    { id: 'seat-6', tableIndex: 2, x: .56, y: .57, orientation: 'back_left' },
+    { id: 'seat-7', tableIndex: 3, x: .65, y: .55, orientation: 'front_right' },
+    { id: 'seat-8', tableIndex: 3, x: .82, y: .58, orientation: 'back_left' }
   ];
+  const SERVICE_DECOR_SLOTS = [
+    { furnitureId: 'shelf', x: .72, y: .45 }, { furnitureId: 'chest', x: .22, y: .75 },
+    { furnitureId: 'plant', x: .80, y: .48 }, { furnitureId: 'plant', x: .24, y: .52 },
+    { furnitureId: 'barrel', x: .82, y: .74 }, { furnitureId: 'rug_green', x: .51, y: .78 },
+    { furnitureId: 'rug_red', x: .62, y: .78 }
+  ];
+  const DEFAULT_PLACED_FURNITURE = [];
 
   function assetPath(name) { return ASSET_PATHS[name] || 'assets/food/plate.png'; }
   function pixelImg(name, alt = '', className = 'pixel-inline') {
@@ -273,7 +293,7 @@
       diamonds: 3,
       inventory: {
         bread: 10, cheese: 5, vegetables: 7, fruits: 0, coffee: 6, sugar: 6, spices: 0, fish: 0,
-        mushrooms: 0, salt: 0, wood: 4, stone: 0, metal: 0, fabric: 2, glass: 0, crystal: 0
+        mushrooms: 0, salt: 0, wood: 10, stone: 6, metal: 0, fabric: 4, glass: 0, crystal: 0
       },
       unlockedZones: ['quarter'],
       upgrades: [],
@@ -300,7 +320,8 @@
       restaurantOpen: true,
       farm: { seeds: { vegetables: 4, fruits: 3, spices: 3 }, plots: [null, null, null, null], player: { x: .50, y: .82 }, lastAutoPlantAt: 0 },
       decorInventory: { table_round: 1, table_square: 0, chair: 2, shelf: 1, chest: 1, plant: 0, rug_green: 0, rug_red: 0, barrel: 0, workbench_station: 0, oven_station: 0, coffee_station: 0, display_station: 0, forge_station: 0, craft_station: 0 },
-      placedFurniture: DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }))
+      placedFurniture: DEFAULT_PLACED_FURNITURE.map(item => ({ ...item })),
+      fixedServiceLayout: true
     };
   }
 
@@ -356,14 +377,20 @@
     };
     const validFurnitureIds = new Set(Object.keys(FURNITURE));
     merged.decorInventory = Object.fromEntries(Object.keys(base.decorInventory).map(key => [key, Number(merged.decorInventory[key] || 0)]));
-    merged.placedFurniture = (Array.isArray(merged.placedFurniture) ? merged.placedFurniture : [])
-      .filter(item => validFurnitureIds.has(item.furnitureId) && ((Number.isFinite(item.x) && Number.isFinite(item.y)) || (Number.isInteger(item.slotIndex) && LAYOUT_SLOTS[item.slotIndex])))
-      .map(item => {
-        const legacy = LAYOUT_SLOTS[item.slotIndex] || { x: item.x, y: item.y };
-        const point = floorPoint(item.x ?? legacy.x, item.y ?? legacy.y);
-        return { uid: item.uid || `${item.furnitureId}-${Date.now()}-${Math.random()}`, furnitureId: item.furnitureId, x: point.x, y: point.y, rotation: Number(item.rotation || 0) };
+    if (!raw.fixedServiceLayout) {
+      const placedCounts = {};
+      (Array.isArray(raw.placedFurniture) ? raw.placedFurniture : []).forEach(item => {
+        if (validFurnitureIds.has(item.furnitureId)) placedCounts[item.furnitureId] = (placedCounts[item.furnitureId] || 0) + 1;
       });
-    if (!merged.placedFurniture.length) merged.placedFurniture = DEFAULT_PLACED_FURNITURE.map(item => ({ ...item }));
+      Object.keys(merged.decorInventory).forEach(key => {
+        merged.decorInventory[key] = Math.max(merged.decorInventory[key] || 0, placedCounts[key] || 0);
+      });
+      merged.inventory.wood = (merged.inventory.wood || 0) + 6;
+      merged.inventory.stone = (merged.inventory.stone || 0) + 6;
+      merged.inventory.fabric = (merged.inventory.fabric || 0) + 2;
+    }
+    merged.placedFurniture = [];
+    merged.fixedServiceLayout = true;
     merged.saveVersion = SAVE_VERSION;
     merged.gameVersion = GAME_VERSION;
     return merged;
@@ -538,9 +565,39 @@
     return { x: bound(Number(x) || .5, bounds.minX, bounds.maxX), y: bounds.y };
   }
 
+  function getFixedServiceTables() {
+    const furniture = [];
+    for (let i = 0; i < (state.decorInventory.table_round || 0); i++) furniture.push('table_round');
+    for (let i = 0; i < (state.decorInventory.table_square || 0); i++) furniture.push('table_square');
+    return SERVICE_TABLE_SLOTS.slice(0, furniture.length).map((slot, index) => ({ ...slot, furnitureId: furniture[index] }));
+  }
+
   function getUsableSeats() {
-    const tables = state.placedFurniture.filter(item => ['table_round', 'table_square'].includes(item.furnitureId));
-    return state.placedFurniture.filter(item => item.furnitureId === 'chair' && tables.some(table => Math.hypot(table.x - item.x, table.y - item.y) <= .18));
+    const tableCount = getFixedServiceTables().length;
+    const chairCount = Math.max(0, Number(state.decorInventory.chair || 0));
+    return SERVICE_SEAT_SLOTS.filter((seat, index) => seat.tableIndex < tableCount && index < chairCount).map(seat => ({ ...seat, furnitureId: 'chair' }));
+  }
+
+  function getCustomerSeat(customer) {
+    const seats = getUsableSeats();
+    let seat = seats.find(item => item.id === customer.seatId);
+    if (!seat) {
+      const occupied = new Set(state.customers.filter(item => item !== customer && item.status !== 'leaving').map(item => item.seatId));
+      seat = seats.find(item => !occupied.has(item.id));
+      if (seat) customer.seatId = seat.id;
+    }
+    return seat;
+  }
+
+  function standingClientPath(customer, now = Date.now()) {
+    const kind = CLIENT_VISUAL_KIND[customer.typeId] || 'red';
+    const frames = CLIENT_STANDING_PATHS[kind];
+    return frames[Math.floor(now / 180) % frames.length];
+  }
+
+  function seatedClientPath(customer, seat) {
+    const kind = CLIENT_VISUAL_KIND[customer.typeId] || 'red';
+    return CLIENT_SEATED_PATHS[`${kind}:${seat?.orientation || 'front_right'}`] || CLIENT_SEATED_PATHS[`${kind}:front_right`];
   }
 
   function switchTab(tab) {
@@ -715,79 +772,35 @@
     const grid = el('layoutGrid');
     if (!layer || !grid) return;
     layer.innerHTML = '';
-    state.placedFurniture.forEach(item => {
+    const fixedItems = [
+      ...getFixedServiceTables(),
+      ...getUsableSeats().filter(seat => !state.customers.some(customer => customer.status === 'seated' && customer.seatId === seat.id)),
+      ...SERVICE_DECOR_SLOTS.filter((slot, index, slots) => {
+        const previous = slots.slice(0, index).filter(item => item.furnitureId === slot.furnitureId).length;
+        return previous < (state.decorInventory[slot.furnitureId] || 0);
+      })
+    ];
+    fixedItems.forEach(item => {
       const furn = FURNITURE[item.furnitureId];
       if (!furn) return;
-      const point = floorPoint(item.x, item.y);
-      item.x = point.x;
-      item.y = point.y;
-      const node = document.createElement(layoutEditing ? 'button' : 'div');
-      if (layoutEditing) node.type = 'button';
-      node.className = `furniture-item ${item.furnitureId}`;
-      node.style.left = `${point.x * 100}%`;
-      node.style.top = `${point.y * 100}%`;
-      const furnitureDepth = 5 + Math.round(point.y * 100);
-      node.style.zIndex = String(!layoutEditing && item.furnitureId === 'chair' ? furnitureDepth + 30 : furnitureDepth);
-      node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}" style="transform:rotate(${Number(item.rotation || 0)}deg)">`;
-      if (layoutEditing) {
-        node.title = `${furn.name} — toucher pour déplacer`;
-        node.classList.add('selected-item');
-        node.addEventListener('pointerdown', event => {
-          event.stopPropagation();
-          selectedFurnitureId = item.furnitureId;
-          selectedFurnitureRotation = Number(item.rotation || 0);
-          removeFurniture(item.uid);
-        });
-      }
+      const node = document.createElement('div');
+      node.className = `furniture-item fixed-furniture ${item.furnitureId}`;
+      node.style.left = `${item.x * 100}%`;
+      node.style.top = `${item.y * 100}%`;
+      node.style.zIndex = String(5 + Math.round(item.y * 100));
+      const mirrored = item.furnitureId === 'chair' && item.orientation?.endsWith('left') ? 'scaleX(-1)' : '';
+      node.innerHTML = `<img src="${assetPath(furn.asset)}" alt="${furn.name}" style="transform:${mirrored}">`;
       layer.appendChild(node);
     });
-    grid.hidden = !layoutEditing;
+    grid.hidden = true;
     grid.innerHTML = '';
   }
 
   function renderLayoutEditor() {
     const panel = el('layoutEditorPanel');
     if (!panel) return;
-    panel.hidden = !layoutEditing;
-    if (!layoutEditing) { panel.innerHTML = ''; return; }
-    const selected = selectedFurnitureId ? FURNITURE[selectedFurnitureId]?.name : 'aucun';
-    panel.innerHTML = `
-      <h3>Agencement libre</h3>
-      <p>Choisis un meuble, puis touche librement le plancher pour le poser. La zone éclairée indique les limites du sol. Touche un meuble posé pour le déplacer.</p>
-      <div class="layout-chip">Sélection : <b>${selected}</b>${selectedFurnitureId ? ` · ${selectedFurnitureRotation}°` : ''}</div>
-      <div class="layout-palette">
-        ${Object.values(FURNITURE).map(item => `
-          <button type="button" class="layout-card ${selectedFurnitureId === item.id ? 'active' : ''}" data-layout-item="${item.id}">
-            <img src="${assetPath(item.asset)}" alt="${item.name}">
-            <b>${item.name}</b>
-            <small>Disponibles : ${state.decorInventory[item.id] || 0}</small>
-          </button>`).join('')}
-      </div>
-      <div class="layout-controls">
-        <button type="button" id="rotateLayoutSelection" class="secondary-button" ${selectedFurnitureId ? '' : 'disabled'}>Tourner</button>
-        <button type="button" id="undoLayoutAction" class="secondary-button" ${layoutHistory.length ? '' : 'disabled'}>Annuler</button>
-        <button type="button" id="storeAllFurniture" class="secondary-button">Tout ranger</button>
-        <button type="button" id="clearLayoutSelection" class="secondary-button">Effacer la sélection</button>
-      </div>
-    `;
-    panel.querySelectorAll('[data-layout-item]').forEach(button => button.addEventListener('click', () => {
-      selectedFurnitureId = button.dataset.layoutItem;
-      selectedFurnitureRotation = 0;
-      renderLayoutEditor();
-      renderFurnitureLayer();
-    }));
-    panel.querySelector('#clearLayoutSelection')?.addEventListener('click', () => {
-      selectedFurnitureId = null;
-      selectedFurnitureRotation = 0;
-      renderLayoutEditor();
-      renderFurnitureLayer();
-    });
-    panel.querySelector('#rotateLayoutSelection')?.addEventListener('click', () => {
-      selectedFurnitureRotation = (selectedFurnitureRotation + 90) % 360;
-      renderLayoutEditor();
-    });
-    panel.querySelector('#undoLayoutAction')?.addEventListener('click', undoLayout);
-    panel.querySelector('#storeAllFurniture')?.addEventListener('click', storeAllFurniture);
+    panel.hidden = true;
+    panel.innerHTML = '';
   }
 
   function discardTrayRecipe(recipeId) {
@@ -803,7 +816,7 @@
 
   function serveStockRecipe(recipeId) {
     pullReadyCookingToTray(false);
-    const customer = state.customers.find(item => item.recipeId === recipeId);
+    const customer = state.customers.find(item => item.recipeId === recipeId && item.status !== 'leaving');
     if (!customer) {
       toast('Aucun client ne commande ce plat pour le moment.');
       return;
@@ -862,55 +875,103 @@
     }
   }
 
-  function customerSlot(index) {
-    const seats = getUsableSeats();
-    const slots = seats.length ? seats.map(seat => floorPoint(seat.x, seat.y + .018)) : [{ x: .56, y: .66 }];
-    return slots[index % slots.length];
+  function customerPosition(customer, now = Date.now()) {
+    const seat = getCustomerSeat(customer) || { x: .5, y: .66 };
+    if (customer.status === 'seated') return { x: seat.x, y: seat.y };
+    const duration = Math.max(1, Number(customer.journeyDuration || 1450));
+    const progress = clamp((now - Number(customer.journeyStartAt || now)) / duration, 0, 1);
+    const eased = progress * progress * (3 - 2 * progress);
+    const from = customer.status === 'leaving' ? seat : { x: .17, y: .55 };
+    const to = customer.status === 'leaving' ? { x: .16, y: .48 } : seat;
+    return { x: from.x + (to.x - from.x) * eased, y: from.y + (to.y - from.y) * eased };
+  }
+
+  function normalizeCustomerVisualState(customer) {
+    const seat = getCustomerSeat(customer);
+    if (!customer.status || !seat) {
+      customer.status = seat ? 'seated' : 'leaving';
+      customer.journeyStartAt = Date.now();
+      customer.journeyDuration = 900;
+    }
+    return seat;
   }
 
   function renderCustomers() {
     const layer = el('customerLayer');
     layer.innerHTML = '';
-    if (layoutEditing) {
-      el('customerCountBadge').textContent = 'agencement';
-      const queue = el('customerQueue');
-      queue.className = 'customer-queue empty-state';
-      queue.textContent = 'Mode agencement : la salle est vidée pour placer les meubles.';
-      return;
-    }
-    state.customers.forEach((customer, index) => {
-      const slot = customerSlot(index);
-      customer.x = slot.x;
-      customer.y = slot.y;
+    state.customers.forEach(customer => {
+      const slot = normalizeCustomerVisualState(customer);
+      if (!slot) return;
+      const position = customerPosition(customer);
+      customer.x = position.x;
+      customer.y = position.y;
       const recipe = getRecipe(customer.recipeId);
       const node = document.createElement('button');
       node.type = 'button';
-      node.className = 'customer-avatar';
-      node.style.left = `${slot.x * 100}%`;
-      node.style.top = `${slot.y * 100}%`;
+      const seated = customer.status === 'seated';
+      node.className = `customer-avatar ${seated ? 'seated' : 'walking'} ${customer.status === 'leaving' ? 'leaving' : ''}`;
+      node.style.left = `${position.x * 100}%`;
+      node.style.top = `${position.y * 100}%`;
       node.dataset.customerId = customer.id;
-      node.style.zIndex = String(10 + Math.round(slot.y * 100));
+      node.style.zIndex = String(10 + Math.round(position.y * 100));
       const pct = clamp(customer.patience / customer.maxPatience * 100, 0, 100);
       const color = pct < 28 ? 'var(--danger)' : pct < 55 ? 'var(--yellow)' : 'var(--green)';
-      node.innerHTML = `<img class="customer-sprite" src="${assetPath(customer.sprite || CLIENT_SPRITES[customer.typeId] || 'client_red')}" alt="${customer.name}"><span class="customer-order">${recipeImg(recipe, 'pixel-small')}<span>${recipe.name}</span></span><span class="patience-bar"><span style="width:${pct}%;background:${color}"></span></span>`;
+      const spritePath = seated ? seatedClientPath(customer, slot) : standingClientPath(customer);
+      const order = customer.status === 'leaving' ? '' : `<span class="customer-order">${recipeImg(recipe, 'pixel-small')}<span>${recipe.name}</span></span><span class="patience-bar"><span style="width:${pct}%;background:${color}"></span></span>`;
+      node.innerHTML = `<img class="customer-sprite" src="${spritePath}" alt="${customer.name}">${order}`;
       node.addEventListener('pointerdown', event => {
         event.stopPropagation();
-        moveTo(slot.x, slot.y, { type: 'serve', customerId: customer.id });
+        if (customer.status !== 'leaving') moveTo(slot.x, slot.y, { type: 'serve', customerId: customer.id });
       });
       layer.appendChild(node);
     });
 
-    el('customerCountBadge').textContent = `${state.customers.length} en attente`;
+    const activeCustomers = state.customers.filter(customer => customer.status !== 'leaving');
+    el('customerCountBadge').textContent = `${activeCustomers.length} à table`;
     const queue = el('customerQueue');
-    if (!state.customers.length) {
+    if (!activeCustomers.length) {
       queue.className = 'customer-queue empty-state';
       queue.textContent = 'Aucun client pour le moment. Profites-en pour cuisiner, fabriquer ou collecter.';
     } else {
       queue.className = 'customer-queue';
-      queue.innerHTML = state.customers.map(c => {
+      queue.innerHTML = activeCustomers.map(c => {
         const recipe = getRecipe(c.recipeId);
-        return `<div class="queue-chip"><img class="pixel-small" src="${assetPath(c.sprite || CLIENT_SPRITES[c.typeId] || 'client_red')}" alt=""><span><b>${recipeImg(recipe, 'pixel-small')} ${recipe.name}</b><small>${Math.ceil(c.patience)} s</small></span></div>`;
+        return `<div class="queue-chip"><img class="pixel-small" src="${standingClientPath(c)}" alt=""><span><b>${recipeImg(recipe, 'pixel-small')} ${recipe.name}</b><small>${c.status === 'seated' ? `${Math.ceil(c.patience)} s` : 's’installe…'}</small></span></div>`;
       }).join('');
+    }
+  }
+
+  function updateCustomerMovement() {
+    const now = Date.now();
+    let needsRender = false;
+    let removed = false;
+    state.customers.forEach(customer => {
+      const seat = getCustomerSeat(customer);
+      if (!seat) return;
+      const node = document.querySelector(`[data-customer-id="${customer.id}"]`);
+      const position = customerPosition(customer, now);
+      if (node) {
+        node.style.left = `${position.x * 100}%`;
+        node.style.top = `${position.y * 100}%`;
+        node.style.zIndex = String(10 + Math.round(position.y * 100));
+        const sprite = node.querySelector('.customer-sprite');
+        if (sprite && customer.status !== 'seated') sprite.src = standingClientPath(customer, now);
+      }
+      const elapsed = now - Number(customer.journeyStartAt || now);
+      if (customer.status === 'walkingIn' && elapsed >= Number(customer.journeyDuration || 1450)) {
+        customer.status = 'seated';
+        needsRender = true;
+      }
+      if (customer.status === 'leaving' && elapsed >= Number(customer.journeyDuration || 1200)) removed = true;
+    });
+    if (removed) {
+      state.customers = state.customers.filter(customer => customer.status !== 'leaving' || now - Number(customer.journeyStartAt || now) < Number(customer.journeyDuration || 1200));
+      saveState();
+      needsRender = true;
+    }
+    if (needsRender) {
+      renderFurnitureLayer();
+      renderCustomers();
     }
   }
 
@@ -931,7 +992,7 @@
     tray.className = 'ready-tray';
     tray.innerHTML = Object.entries(counts).map(([recipeId, count]) => {
       const recipe = getRecipe(recipeId);
-      const ordered = state.customers.some(customer => customer.recipeId === recipeId);
+      const ordered = state.customers.some(customer => customer.recipeId === recipeId && customer.status !== 'leaving');
       return `<div class="tray-chip" title="${count} × ${recipe.name}">${recipeImg(recipe, 'pixel-small')}<b>${recipe.name}</b>${count > 1 ? `<span class="tray-chip-count">x${count}</span>` : ''}<span class="tray-actions"><button class="small-button serve-stock" data-recipe-id="${recipe.id}" data-stock-action="${ordered ? 'serve' : 'sell'}" type="button">${ordered ? 'Servir' : 'Vendre'}</button><button class="mini-icon-button discard-chip" data-recipe-id="${recipe.id}" type="button" title="Jeter ce plat">🗑️</button></span></div>`;
     }).join('');
     tray.querySelectorAll('.discard-chip').forEach(button => button.addEventListener('click', event => {
@@ -1091,7 +1152,10 @@
   function spawnCustomer() {
     if (!state.restaurantOpen) return;
     const effects = getEffects();
-    if (state.customers.length >= effects.maxCustomers) {
+    const activeCustomers = state.customers.filter(customer => customer.status !== 'leaving');
+    const occupied = new Set(activeCustomers.map(customer => customer.seatId));
+    const seat = getUsableSeats().find(candidate => !occupied.has(candidate.id));
+    if (activeCustomers.length >= effects.maxCustomers || !seat) {
       state.nextCustomerAt = Date.now() + 4500;
       return;
     }
@@ -1110,8 +1174,12 @@
       maxPatience,
       multiplier: type.multiplier,
       repBonus: type.repBonus || 0,
-      x: .5,
-      y: .5
+      seatId: seat.id,
+      status: 'walkingIn',
+      journeyStartAt: Date.now(),
+      journeyDuration: state.settings.reducedMotion ? 250 : 1450,
+      x: .17,
+      y: .55
     });
     const baseDelay = Math.max(6500, 13500 - Math.min(state.reputation * 4, 4800));
     state.nextCustomerAt = Date.now() + baseDelay + randomInt(0, 3500);
@@ -1128,7 +1196,6 @@
       return false;
     }
     state.tray.splice(trayIndex, 1);
-    state.customers.splice(index, 1);
     const type = CLIENT_TYPES.find(t => t.id === customer.typeId);
     const recipe = getRecipe(customer.recipeId);
     const effects = getEffects();
@@ -1149,6 +1216,9 @@
     state.reputation += rep;
     state.stats.coinsEarned += reward;
     state.stats.served += 1;
+    customer.status = 'leaving';
+    customer.journeyStartAt = Date.now();
+    customer.journeyDuration = state.settings.reducedMotion ? 250 : 1250;
     if (!automatic) toast(`Commande servie : +${reward} 🪙 · +${rep} ⭐${state.stats.currentCombo >= 3 ? ` · combo x${state.stats.currentCombo}` : ''}`);
     else toast(`L’aide-comptoir a servi ${recipe.name}.`);
     maybeFindCollectible(customer.typeId === 'tourist' ? 'sea' : 'quarter', 0.02);
@@ -1158,7 +1228,10 @@
   }
 
   function loseCustomer(customer) {
-    state.customers = state.customers.filter(c => c.id !== customer.id);
+    if (customer.status === 'leaving') return;
+    customer.status = 'leaving';
+    customer.journeyStartAt = Date.now();
+    customer.journeyDuration = state.settings.reducedMotion ? 250 : 1250;
     state.stats.lost += 1;
     state.stats.currentCombo = 0;
     if (customer.typeId === 'inspector') {
@@ -1175,7 +1248,7 @@
     grid.innerHTML = ZONES.map(zone => {
       const unlocked = state.unlockedZones.includes(zone.id);
       const costOk = canPay(zone.unlockCost.coins || 0, Object.fromEntries(Object.entries(zone.unlockCost).filter(([k]) => k !== 'coins')));
-      const repOk = state.reputation >= zone.repNeed;
+      const repOk = zone.unlockCheck ? zone.unlockCheck(state) : state.reputation >= zone.repNeed;
       const xp = state.zoneXP[zone.id] || 0;
       const level = Math.floor(xp / 25) + 1;
       const pct = (xp % 25) / 25 * 100;
@@ -1186,10 +1259,10 @@
       }).join('')}</div>` : '';
       const materialCosts = Object.fromEntries(Object.entries(zone.unlockCost).filter(([k]) => k !== 'coins'));
       return `<article class="zone-card ${unlocked ? '' : 'locked'}">
-        <div class="zone-art ${zone.className}"><img class="zone-scene" src="${assetPath(ZONE_ART[zone.id])}" alt="${zone.name}"><span class="badge">${unlocked ? `Niv. ${level}` : `${zone.repNeed} ⭐`}</span>${nodes}<img class="region-player" src="${assetPath('player_idle')}" alt="Votre personnage"></div>
+        <div class="zone-art ${zone.className}"><img class="zone-scene" src="${assetPath(ZONE_ART[zone.id])}" alt="${zone.name}"><span class="badge">${unlocked ? `Niv. ${level}` : (zone.unlockHint || `${zone.repNeed} ⭐`)}</span>${nodes}<img class="region-player" src="${assetPath('player_idle')}" alt="Votre personnage"></div>
         <div class="zone-body">
           <h2>${zone.name}</h2><p>${zone.description}</p>
-          ${unlocked ? `<div class="zone-meter"><span style="width:${pct}%"></span></div><small>${xp % 25}/25 passages avant le niveau fournisseur suivant</small><p class="scene-help">Touche un fournisseur ou une ressource directement dans le lieu.</p>` : `<div class="cost-row"><span class="resource-chip">🪙 ${fmt(zone.unlockCost.coins || 0)}</span>${materialChips(materialCosts)}</div><button class="primary-button wide unlock-zone" data-zone="${zone.id}" type="button" ${repOk && costOk ? '' : 'disabled'}>${repOk ? 'Débloquer la zone' : `Il faut ${zone.repNeed} réputation`}</button>`}
+          ${unlocked ? `<div class="zone-meter"><span style="width:${pct}%"></span></div><small>${xp % 25}/25 passages avant le niveau fournisseur suivant</small><p class="scene-help">Touche un fournisseur ou une ressource directement dans le lieu.</p>` : `<div class="cost-row"><span class="resource-chip">🪙 ${fmt(zone.unlockCost.coins || 0)}</span>${materialChips(materialCosts)}</div><button class="primary-button wide unlock-zone" data-zone="${zone.id}" type="button" ${repOk && costOk ? '' : 'disabled'}>${repOk ? 'Construire l’accès' : (zone.unlockHint || `Il faut ${zone.repNeed} réputation`)}</button>`}
         </div>
       </article>`;
     }).join('');
@@ -1214,6 +1287,7 @@
   function farmPlotState(plot) {
     if (!plot) return { status: 'empty', remaining: 0 };
     const crop = FARM_CROPS[plot.cropId];
+    if (!crop) return { status: 'empty', remaining: 0 };
     const remaining = Math.max(0, plot.readyAt - Date.now());
     return { status: remaining ? 'growing' : 'ready', remaining, crop };
   }
@@ -1295,7 +1369,8 @@
 
   function unlockZone(zoneId) {
     const zone = getZone(zoneId);
-    if (!zone || state.unlockedZones.includes(zoneId) || state.reputation < zone.repNeed) return;
+    const progressionOk = zone?.unlockCheck ? zone.unlockCheck(state) : state.reputation >= (zone?.repNeed || 0);
+    if (!zone || state.unlockedZones.includes(zoneId) || !progressionOk) return;
     const coins = zone.unlockCost.coins || 0;
     const materials = Object.fromEntries(Object.entries(zone.unlockCost).filter(([k]) => k !== 'coins'));
     if (!canPay(coins, materials)) return toast('Il manque des ressources pour ouvrir cette zone.');
@@ -1830,6 +1905,7 @@
     if (state.restaurantOpen) {
       const expired = [];
       state.customers.forEach(customer => {
+        if (customer.status !== 'seated') return;
         customer.patience -= 1;
         if (customer.patience <= 0) expired.push(customer);
       });
@@ -1857,6 +1933,7 @@
     const dt = Math.min((now - lastFrame) / 1000, .05);
     lastFrame = now;
     updateMovement(dt);
+    updateCustomerMovement();
     if (now - lastSecondTick > 1000) {
       lastSecondTick = now;
       tickSecond();
@@ -1906,7 +1983,7 @@
     el('goalShortcut').addEventListener('click', () => switchTab('objectives'));
     el('contextAction').addEventListener('click', () => switchTab('kitchen'));
     el('toggleRestaurant').addEventListener('click', toggleRestaurant);
-    el('toggleLayoutEditor').addEventListener('click', toggleLayoutEditor);
+    el('toggleLayoutEditor')?.addEventListener('click', toggleLayoutEditor);
     document.querySelectorAll('[data-upgrade-filter]').forEach(button => button.addEventListener('click', () => {
       upgradeFilter = button.dataset.upgradeFilter;
       document.querySelectorAll('[data-upgrade-filter]').forEach(b => b.classList.toggle('active', b === button));

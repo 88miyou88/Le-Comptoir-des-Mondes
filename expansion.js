@@ -162,25 +162,119 @@
     { id: 'estate_2', title: 'Deuxième adresse', description: 'Ouvrir 2 établissements', type: 'long', metric: 'exp:establishments', target: 2, reward: { diamonds: 5, coins: 2000 } }
   ];
   EXTRA_OBJECTIVES.forEach(objective => { if (!C.OBJECTIVES.some(existing => existing.id === objective.id)) C.OBJECTIVES.push(objective); });
+  const ATELIER_OBJECTIVES = [
+    { id: 'atelier_first_craft', title: 'L’atelier s’éveille', description: 'Tresser et récupérer une première corde', type: 'short', metric: 'exp:crafted', target: 1, reward: { wood: 2, stone: 1 } },
+    { id: 'atelier_sawmill', title: 'Une vraie scierie', description: 'Construire et installer la scierie', type: 'short', metric: 'exp:machines', target: 2, reward: { wood: 4, coins: 80 } },
+    { id: 'atelier_planks', title: 'Premières planches', description: 'Scier 2 planches', type: 'short', metric: 'item:plank', target: 2, reward: { fabric: 2 } },
+    { id: 'atelier_forge', title: 'Entrer dans l’âge du métal', description: 'Construire et installer la forge', type: 'medium', metric: 'exp:machines', target: 3, reward: { ore: 2, coal: 1 } },
+    { id: 'atelier_new_seat', title: 'La salle grandit', description: 'Fabriquer une nouvelle chaise de service', type: 'medium', metric: 'exp:serviceSeats', target: 3, reward: { coins: 180 } },
+    { id: 'atelier_second_table', title: 'Deuxième tablée', description: 'Fabriquer une deuxième table', type: 'medium', metric: 'exp:serviceTables', target: 2, reward: { diamonds: 1 } }
+  ];
+  const missingAtelierObjectives = ATELIER_OBJECTIVES.filter(objective => !C.OBJECTIVES.some(existing => existing.id === objective.id));
+  C.OBJECTIVES.unshift(...missingAtelierObjectives);
+
+  const MACHINE_DEFS = {
+    workbench: { id: 'workbench', name: 'Établi', asset: 'workbench', x: .24, y: .61, unlocks: ['Plans de base', 'Cordes', 'Mobilier simple'] },
+    sawmill: { id: 'sawmill', name: 'Scierie', asset: 'mill', x: .43, y: .52, unlocks: ['Planches', 'Tables', 'Route de la forêt'] },
+    forge: { id: 'forge', name: 'Forge', asset: 'forge', x: .64, y: .50, unlocks: ['Lingots', 'Clous', 'Engrenages'] },
+    mill: { id: 'mill', name: 'Moulin', asset: 'mix_station', x: .80, y: .61, unlocks: ['Pâte', 'Compote', 'Recettes artisanales'] },
+    press: { id: 'press', name: 'Presse', asset: 'press', x: .34, y: .75, unlocks: ['Plaques de verre', 'Composants fins'] },
+    assembler: { id: 'assembler', name: 'Assembleuse', asset: 'craft_machine', x: .67, y: .75, unlocks: ['Machines avancées', 'Produits complexes'] }
+  };
+
+  const MACHINE_BUILD_RECIPES = [
+    { id: 'build_sawmill', name: 'Construire la scierie', category: 'machine', room: 'industry', machine: 'workbench', asset: 'mill', duration: 7, inputs: { wood: 4, stone: 2, rope: 1 }, output: { type: 'machine', id: 'sawmill', qty: 1 } },
+    { id: 'build_forge', name: 'Construire la forge', category: 'machine', room: 'industry', machine: 'workbench', requiresMachine: 'sawmill', asset: 'forge', duration: 10, inputs: { plank: 4, stone: 5, rope: 1 }, output: { type: 'machine', id: 'forge', qty: 1 } },
+    { id: 'build_mill', name: 'Construire le moulin', category: 'machine', room: 'industry', machine: 'workbench', requiresMachine: 'forge', asset: 'mix_station', duration: 12, inputs: { plank: 5, stone: 3, nails: 2 }, output: { type: 'machine', id: 'mill', qty: 1 } },
+    { id: 'build_press', name: 'Construire la presse', category: 'machine', room: 'industry', machine: 'forge', requiresMachine: 'forge', asset: 'press', duration: 14, inputs: { plank: 6, metal: 4, gear: 1 }, output: { type: 'machine', id: 'press', qty: 1 } },
+    { id: 'build_assembler', name: 'Construire l’assembleuse', category: 'machine', room: 'industry', machine: 'forge', requiresMachine: 'press', requiresTech: 'electricity', asset: 'craft_machine', duration: 18, inputs: { plank: 8, metal: 6, gear: 3, glass_panel: 2 }, output: { type: 'machine', id: 'assembler', qty: 1 } }
+  ];
+
+  const ATELIER_GOALS = [
+    { done: () => exp().machines.includes('sawmill'), title: 'Construis la scierie', detail: 'Tresse une corde à l’établi, puis assemble la première machine.' },
+    { done: () => (state().inventory.plank || 0) >= 2 || exp().firstCrafts.includes('planks'), title: 'Scie tes premières planches', detail: 'La scierie transforme le bois et ouvre le mobilier.' },
+    { done: () => exp().machines.includes('forge'), title: 'Construis la forge', detail: 'Utilise tes planches, de la pierre et une corde.' },
+    { done: () => (state().inventory.nails || 0) >= 2 || exp().firstCrafts.includes('nails'), title: 'Forge tes premiers clous', detail: 'Ils permettent de fabriquer les meubles de la salle.' },
+    { done: () => (state().decorInventory.chair || 0) >= 3, title: 'Ajoute une chaise au service', detail: 'Récupère-la à l’établi : elle apparaîtra automatiquement dans la salle.' },
+    { done: () => (state().decorInventory.table_round || 0) + (state().decorInventory.table_square || 0) >= 2, title: 'Ouvre une deuxième table', detail: 'Chaque nouvelle table crée un nouveau groupe de places fixes.' },
+    { done: () => exp().machines.includes('mill'), title: 'Construis le moulin', detail: 'Débloque les préparations culinaires artisanales.' },
+    { done: () => exp().machines.includes('press'), title: 'Installe la presse', detail: 'Prépare le verre et les composants nécessaires aux technologies.' },
+    { done: () => hasTech('electricity'), title: 'Découvre l’électricité', detail: 'La première grande technologie ouvre l’automatisation.' },
+    { done: () => exp().machines.includes('assembler'), title: 'Construis l’assembleuse', detail: 'Le domaine entre dans l’ère des machines avancées.' }
+  ];
+
+  const legacyMachineRecipeIds = new Set(['workbench_station', 'oven_station', 'coffee_station', 'display_station', 'forge_station', 'craft_station']);
+  for (let index = CRAFT_RECIPES.length - 1; index >= 0; index--) {
+    if (legacyMachineRecipeIds.has(CRAFT_RECIPES[index].id)) CRAFT_RECIPES.splice(index, 1);
+  }
+  CRAFT_RECIPES.unshift(...MACHINE_BUILD_RECIPES);
+  const RECIPE_MACHINES = {
+    rope: 'workbench', plates: 'workbench', bowls: 'workbench', chair: 'workbench', table_round: 'workbench', table_square: 'workbench', shelf: 'workbench', chest: 'workbench', barrel: 'workbench', rug_green: 'workbench', rug_red: 'workbench', plant: 'workbench',
+    planks: 'sawmill', ingots: 'forge', nails: 'forge', gears: 'forge', dough: 'mill', compote: 'mill', chopped_veg: 'mill', glass_panels: 'press',
+    jam_jar: 'assembler', herb_pouch: 'assembler', picnic_box: 'assembler', sea_box: 'assembler', souvenir: 'assembler'
+  };
+  CRAFT_RECIPES.forEach(recipe => { recipe.machine ||= RECIPE_MACHINES[recipe.id] || 'workbench'; });
+
+  C.UPGRADES.forEach(upgrade => { upgrade.repNeed = 0; });
+  STAFF.forEach(member => { member.rep = 0; });
+  TECHNOLOGIES.forEach(tech => { tech.rep = 0; });
+  const technologyRetune = {
+    electricity: { coins: 1200, materials: { metal: 6, gear: 2, glass_panel: 1 } },
+    conveyor: { coins: 2600, materials: { metal: 8, gear: 5 } },
+    smart_storage: { coins: 3200, materials: { plank: 8, metal: 6, glass_panel: 3 } },
+    auto_register: { coins: 5200, materials: { metal: 10, gear: 7, glass_panel: 4 } },
+    harvest_drone: { coins: 7600, materials: { metal: 12, gear: 8, crystal: 2 } }
+  };
+  TECHNOLOGIES.forEach(tech => { if (technologyRetune[tech.id]) Object.assign(tech, technologyRetune[tech.id]); });
+  ESTABLISHMENTS.forEach(place => { place.rep = 0; });
+  const zoneProgression = {
+    forest: { hint: 'Scierie requise', machine: 'sawmill', cost: { coins: 120, plank: 4, rope: 1 } },
+    mine: { hint: 'Forge requise', machine: 'forge', cost: { coins: 350, plank: 6, rope: 1 } },
+    sea: { hint: 'Moulin requis', machine: 'mill', cost: { coins: 900, plank: 10, metal: 4, rope: 2 } },
+    mountain: { hint: 'Presse requise', machine: 'press', cost: { coins: 1800, plank: 14, metal: 8 } },
+    night: { hint: 'Électricité requise', tech: 'electricity', cost: { coins: 3200, glass_panel: 6, gear: 4 } },
+    greenhouse: { hint: 'Assembleuse requise', machine: 'assembler', cost: { coins: 6000, glass_panel: 10, metal: 10 } }
+  };
+  C.ZONES.forEach(zone => {
+    const progression = zoneProgression[zone.id];
+    if (!progression) return;
+    zone.repNeed = 0;
+    zone.unlockHint = progression.hint;
+    zone.unlockCost = progression.cost;
+    zone.unlockCheck = save => (!progression.machine || (save.expansion?.machines || []).includes(progression.machine)) && (!progression.tech || (save.expansion?.tech || []).includes(progression.tech));
+  });
+
+  const recipeUnlocks = {
+    veggie_bowl: save => (save.expansion?.machines || []).includes('mill'),
+    artisan_tart: save => (save.expansion?.machines || []).includes('mill'),
+    mountain_stew: save => save.unlockedZones.includes('mountain'),
+    night_coffee: save => save.unlockedZones.includes('night'),
+    tropical_plate: save => save.unlockedZones.includes('greenhouse')
+  };
+  C.RECIPES.forEach(recipe => { if (recipeUnlocks[recipe.id]) recipe.unlock = recipeUnlocks[recipe.id]; });
 
   let productionFilter = 'material';
   let preparedState = null;
 
   function expansionDefaults() {
     return {
-      schema: 1,
+      schema: 2,
       crafting: [],
+      machines: ['workbench'],
+      discoveries: ['plans_base'],
+      firstCrafts: [],
       tech: [],
       staff: [],
       establishments: ['neighborhood'],
       shop: { level: 1, theme: 'forest', stock: {} },
       menu: [],
       event: { name: '', description: '', activeUntil: 0, nextAt: Date.now() + 75000 },
+      jam: { machineId: '', since: 0, nextAt: Date.now() + 120000 },
       farmExtraPlots: 0,
       mastery: Object.fromEntries(Object.keys(MASTERY).map(key => [key, { level: 1, xp: 0 }])),
       stats: { crafted: 0, furnitureCrafted: 0, harvested: 0, shopSales: 0, shopCoins: 0, passiveCoins: 0 },
-      timers: { establishments: Date.now(), techServe: Date.now(), techFarm: Date.now(), techShop: Date.now(), prediction: Date.now() },
-      observed: { served: 0, cooked: 0, gathers: 0, harvestedPlots: 0 }
+      timers: { establishments: Date.now(), techServe: Date.now(), techFarm: Date.now(), techShop: Date.now(), prediction: Date.now(), lastCraftTick: Date.now() },
+      observed: { served: 0, cooked: 0, gathers: 0, harvestedPlots: 0, miniWins: 0 }
     };
   }
 
@@ -193,11 +287,20 @@
       ...base, ...raw,
       shop: { ...base.shop, ...(raw.shop || {}), stock: { ...base.shop.stock, ...(raw.shop?.stock || {}) } },
       event: { ...base.event, ...(raw.event || {}) },
+      jam: { ...base.jam, ...(raw.jam || {}) },
       mastery: Object.fromEntries(Object.keys(MASTERY).map(key => [key, { ...base.mastery[key], ...(raw.mastery?.[key] || {}) }])),
       stats: { ...base.stats, ...(raw.stats || {}) },
       timers: { ...base.timers, ...(raw.timers || {}) },
       observed: { ...base.observed, ...(raw.observed || {}) },
-      crafting: Array.isArray(raw.crafting) ? raw.crafting : [],
+      crafting: Array.isArray(raw.crafting) ? raw.crafting.map(job => ({
+        ...job,
+        remainingMs: Number.isFinite(job.remainingMs) ? job.remainingMs : Math.max(0, Number(job.readyAt || Date.now()) - Date.now()),
+        durationMs: Number(job.durationMs || Math.max(1000, Number(job.readyAt || Date.now()) - Number(job.startedAt || Date.now()))),
+        ready: job.ready === true || (Number.isFinite(job.remainingMs) ? job.remainingMs <= 0 : Number(job.readyAt || 0) <= Date.now())
+      })) : [],
+      machines: Array.isArray(raw.machines) && raw.machines.length ? raw.machines : ['workbench'],
+      discoveries: Array.isArray(raw.discoveries) ? raw.discoveries : ['plans_base'],
+      firstCrafts: Array.isArray(raw.firstCrafts) ? raw.firstCrafts : [],
       tech: Array.isArray(raw.tech) ? raw.tech : [],
       staff: Array.isArray(raw.staff) ? raw.staff : [],
       establishments: Array.isArray(raw.establishments) && raw.establishments.length ? raw.establishments : ['neighborhood']
@@ -206,6 +309,9 @@
     Object.keys(C.FURNITURE).forEach(key => { state.decorInventory[key] = Number(state.decorInventory[key] || 0); });
     Object.keys(C.FARM_CROPS).forEach(key => { state.farm.seeds[key] = Number(state.farm.seeds[key] || 0); });
     ['mountain', 'night', 'greenhouse'].forEach(key => { state.zoneXP[key] = Number(state.zoneXP[key] || 0); });
+    if ((state.decorInventory.forge_station || 0) > 0 && !state.expansion.machines.includes('forge')) state.expansion.machines.push('forge');
+    if ((state.decorInventory.craft_station || 0) > 0 && !state.expansion.machines.includes('assembler')) state.expansion.machines.push('assembler');
+    state.expansion.machines = [...new Set(['workbench', ...state.expansion.machines])];
     while (state.farm.plots.length < C.getFarmCapacity()) state.farm.plots.push(null);
     preparedState = state;
     return state.expansion;
@@ -229,19 +335,29 @@
   }
 
   function recipeUnlocked(recipe) {
-    if (state().reputation < (recipe.rep || 0)) return false;
+    if (!exp().machines.includes(recipe.machine || 'workbench')) return false;
+    if (recipe.requiresMachine && !exp().machines.includes(recipe.requiresMachine)) return false;
     if (recipe.requiresTech && !hasTech(recipe.requiresTech)) return false;
+    if (recipe.requiresZone && !state().unlockedZones.includes(recipe.requiresZone)) return false;
     return true;
+  }
+
+  function machineCapacity(machineId) {
+    return 1 + (hasTech('conveyor') ? 1 : 0);
+  }
+
+  function machineJobs(machineId) {
+    return exp().crafting.filter(job => (job.machineId || CRAFT_RECIPES.find(recipe => recipe.id === job.recipeId)?.machine || 'workbench') === machineId);
   }
 
   function startCraft(recipeId) {
     const recipe = CRAFT_RECIPES.find(item => item.id === recipeId);
     if (!recipe || !recipeUnlocked(recipe)) return;
-    if (exp().crafting.length >= craftSlots()) return C.toast('Toutes les files de fabrication sont occupées.');
+    if (machineJobs(recipe.machine).length >= machineCapacity(recipe.machine)) return C.toast(`${MACHINE_DEFS[recipe.machine]?.name || 'Cette machine'} est déjà occupée.`);
     if (!C.canPay(0, recipe.inputs)) return C.toast('Il manque des matériaux.');
     C.pay(0, recipe.inputs);
     const duration = craftDuration(recipe);
-    exp().crafting.push({ uid: `${Date.now()}-${Math.random()}`, recipeId, startedAt: Date.now(), readyAt: Date.now() + duration });
+    exp().crafting.push({ uid: `${Date.now()}-${Math.random()}`, recipeId, machineId: recipe.machine, startedAt: Date.now(), durationMs: duration, remainingMs: duration, ready: false, notified: false });
     C.saveState();
     C.renderAll();
     C.toast(`${recipe.name} lancé.`);
@@ -255,27 +371,70 @@
       exp().stats.furnitureCrafted += output.qty;
     }
     if (output.type === 'shop') exp().shop.stock[output.id] = (exp().shop.stock[output.id] || 0) + output.qty;
+    if (output.type === 'machine' && !exp().machines.includes(output.id)) {
+      exp().machines.push(output.id);
+      exp().discoveries.push(`machine:${output.id}`);
+      const machine = MACHINE_DEFS[output.id];
+      C.toast(`Nouvelle machine installée : ${machine?.name || output.id} !`);
+    }
+    if (!exp().firstCrafts.includes(recipe.id)) exp().firstCrafts.push(recipe.id);
     exp().stats.crafted += 1;
     awardMastery('craft', 16);
-    C.toast(`${recipe.name} terminé et rangé.`);
+    if (output.type !== 'machine') C.toast(`${recipe.name} récupéré${output.type === 'furniture' ? ' · la salle se met à jour' : ''}.`);
   }
 
   function processCrafting() {
-    const ready = exp().crafting.filter(job => job.readyAt <= Date.now());
-    if (!ready.length) return false;
-    ready.forEach(job => {
-      const recipe = CRAFT_RECIPES.find(item => item.id === job.recipeId);
-      if (recipe) grantCraftOutput(recipe);
+    const now = Date.now();
+    const last = Number(exp().timers.lastCraftTick || now);
+    exp().timers.lastCraftTick = now;
+    if (document.hidden) return false;
+    const elapsed = Math.min(1500, Math.max(0, now - last));
+    let changed = false;
+    exp().crafting.forEach(job => {
+      if (job.ready) return;
+      const jammed = exp().jam.machineId === job.machineId;
+      job.remainingMs = Math.max(0, Number(job.remainingMs || 0) - elapsed * (jammed ? .15 : 1));
+      if (job.remainingMs <= 0) {
+        job.ready = true;
+        if (!job.notified) {
+          const recipe = CRAFT_RECIPES.find(item => item.id === job.recipeId);
+          C.toast(`${recipe?.name || 'Fabrication'} prêt : va le récupérer dans la salle des machines.`);
+          job.notified = true;
+        }
+        changed = true;
+      }
     });
-    exp().crafting = exp().crafting.filter(job => job.readyAt > Date.now());
+    if (changed) C.saveState();
+    return changed;
+  }
+
+  function collectCraftOutput(jobUid) {
+    const index = exp().crafting.findIndex(job => job.uid === jobUid && job.ready);
+    if (index < 0) return;
+    const [job] = exp().crafting.splice(index, 1);
+    const recipe = CRAFT_RECIPES.find(item => item.id === job.recipeId);
+    if (recipe) grantCraftOutput(recipe);
     C.saveState();
-    return true;
+    C.renderAll();
+  }
+
+  function accelerateMachine(machineId) {
+    const job = machineJobs(machineId).find(item => !item.ready);
+    if (!job) return;
+    const now = Date.now();
+    if (now - Number(job.lastBoostAt || 0) < 550) return;
+    job.lastBoostAt = now;
+    job.remainingMs = Math.max(0, Number(job.remainingMs || 0) - 1800);
+    C.toast(`Coup de main : -${Math.min(1.8, Number(job.remainingMs || 0) / 1000 + 1.8).toFixed(1)} s.`);
+    C.saveState();
+    renderCrafting();
   }
 
   function outputLabel(recipe) {
     const output = recipe.output;
     if (output.type === 'item') return `${output.qty} × ${C.ITEMS[output.id]?.name || output.id}`;
     if (output.type === 'furniture') return `${output.qty} × ${C.FURNITURE[output.id]?.name || output.id}`;
+    if (output.type === 'machine') return `Machine : ${MACHINE_DEFS[output.id]?.name || output.id}`;
     return `${output.qty} × ${SHOP_PRODUCTS[output.id]?.name || output.id}`;
   }
 
@@ -283,6 +442,7 @@
     const output = recipe.output;
     if (output.type === 'item') return state().inventory[output.id] || 0;
     if (output.type === 'furniture') return state().decorInventory[output.id] || 0;
+    if (output.type === 'machine') return exp().machines.includes(output.id) ? 1 : 0;
     return exp().shop.stock[output.id] || 0;
   }
 
@@ -291,23 +451,29 @@
     if (!jobs.length) return '<div class="empty-inline">Aucune fabrication en cours.</div>';
     return jobs.map(job => {
       const recipe = CRAFT_RECIPES.find(item => item.id === job.recipeId);
-      const total = Math.max(1, job.readyAt - job.startedAt);
-      const remaining = Math.max(0, job.readyAt - Date.now());
+      const total = Math.max(1, Number(job.durationMs || 1));
+      const remaining = Math.max(0, Number(job.remainingMs || 0));
       const pct = Math.max(0, Math.min(100, (1 - remaining / total) * 100));
-      return `<div class="production-job">${C.pixelImg(recipe.asset, recipe.name, 'pixel-card-icon')}<span><b>${recipe.name}</b><small>${Math.ceil(remaining / 1000)} s</small><i><em style="width:${pct}%"></em></i></span></div>`;
+      return `<div class="production-job ${job.ready ? 'ready' : ''}">${C.pixelImg(recipe.asset, recipe.name, 'pixel-card-icon')}<span><b>${recipe.name}</b><small>${job.ready ? 'Prêt · à récupérer dans la salle' : `${Math.ceil(remaining / 1000)} s · ${MACHINE_DEFS[recipe.machine]?.name || 'machine'}`}</small><i><em style="width:${job.ready ? 100 : pct}%"></em></i></span></div>`;
     }).join('');
   }
 
   function craftCard(recipe) {
     const unlocked = recipeUnlocked(recipe);
-    const canStart = unlocked && exp().crafting.length < craftSlots() && C.canPay(0, recipe.inputs);
+    const ownedOutput = recipe.output.type === 'machine' && exp().machines.includes(recipe.output.id);
+    const busy = machineJobs(recipe.machine).length >= machineCapacity(recipe.machine);
+    const canStart = unlocked && !ownedOutput && !busy && C.canPay(0, recipe.inputs);
     let lock = '';
-    if (!unlocked) lock = recipe.requiresTech ? 'Technologie requise' : `${recipe.rep} réputation requise`;
+    if (!unlocked) {
+      if (!exp().machines.includes(recipe.machine || 'workbench')) lock = `Construis ${MACHINE_DEFS[recipe.machine]?.name || 'la machine'}`;
+      else if (recipe.requiresMachine) lock = `Nécessite ${MACHINE_DEFS[recipe.requiresMachine]?.name || recipe.requiresMachine}`;
+      else if (recipe.requiresTech) lock = 'Technologie requise';
+    }
     return `<article class="craft-card ${unlocked ? '' : 'locked'}">
-      <div class="craft-card-art">${C.pixelImg(recipe.asset, recipe.name, 'pixel-card-icon')}<span class="badge">${recipe.duration} s</span></div>
+      <div class="craft-card-art">${C.pixelImg(recipe.asset, recipe.name, 'pixel-card-icon')}<span class="badge">${MACHINE_DEFS[recipe.machine]?.name || 'Établi'} · ${recipe.duration} s</span></div>
       <h3>${recipe.name}</h3><p>Produit : <b>${outputLabel(recipe)}</b></p><small>En stock : ${outputStock(recipe)}</small>
       <div class="cost-row">${C.materialChips(recipe.inputs)}</div>
-      <button class="primary-button start-craft" data-craft="${recipe.id}" type="button" ${canStart ? '' : 'disabled'}>${lock || (exp().crafting.length >= craftSlots() ? 'Files occupées' : 'Fabriquer')}</button>
+      <button class="primary-button start-craft" data-craft="${recipe.id}" type="button" ${canStart ? '' : 'disabled'}>${ownedOutput ? 'Déjà construite' : lock || (busy ? 'Machine occupée' : 'Fabriquer')}</button>
     </article>`;
   }
 
@@ -323,11 +489,64 @@
     const filters = C.el('industryFilters');
     if (filters) filters.innerHTML = [['material', 'Matériaux'], ['component', 'Composants'], ['machine', 'Machines']].map(([id, label]) => `<button class="filter-chip ${productionFilter === id ? 'active' : ''}" data-production-filter="${id}" type="button">${label}</button>`).join('');
     const capacity = C.el('industryCapacityBadge');
-    if (capacity) capacity.textContent = `${exp().crafting.length}/${craftSlots()} file(s)`;
+    if (capacity) capacity.textContent = `${exp().crafting.filter(job => !job.ready).length} en cours · ${exp().crafting.filter(job => job.ready).length} prêt(s)`;
     const carpLevel = C.el('carpentryLevelBadge');
     if (carpLevel) carpLevel.textContent = `Maîtrise ${exp().mastery.craft.level}`;
     document.querySelectorAll('.start-craft').forEach(button => button.addEventListener('click', () => startCraft(button.dataset.craft)));
     filters?.querySelectorAll('[data-production-filter]').forEach(button => button.addEventListener('click', () => { productionFilter = button.dataset.productionFilter; renderCrafting(); }));
+  }
+
+  function currentAtelierGoal() {
+    return ATELIER_GOALS.find(goal => !goal.done()) || { title: 'Choisis ta prochaine ère', detail: 'Développe les technologies, les collections et les régions selon ton envie.' };
+  }
+
+  function renderAtelierGoal() {
+    const target = C.el('atelierNextGoal');
+    if (!target) return;
+    const goal = currentAtelierGoal();
+    target.innerHTML = `<span class="atelier-goal-compass">🧭</span><div><small>PROCHAINE DÉCOUVERTE</small><b>${goal.title}</b><p>${goal.detail}</p></div><span class="badge">${exp().machines.length}/${Object.keys(MACHINE_DEFS).length} machines</span>`;
+  }
+
+  function collectAtMachine(jobUid, machineId) {
+    const job = exp().crafting.find(item => item.uid === jobUid && item.ready);
+    if (!job) return;
+    const machine = MACHINE_DEFS[machineId];
+    const player = C.el('machineRoomPlayer');
+    if (!machine || !player) return collectCraftOutput(jobUid);
+    player.classList.add('walking');
+    player.style.left = `${machine.x * 100}%`;
+    player.style.top = `${Math.min(.86, machine.y + .09) * 100}%`;
+    const delay = state().settings.reducedMotion ? 30 : 620;
+    setTimeout(() => {
+      player.classList.remove('walking');
+      collectCraftOutput(jobUid);
+    }, delay);
+  }
+
+  function renderMachineRoom() {
+    const layer = C.el('machineRoomSlots');
+    if (!layer) return;
+    layer.innerHTML = Object.values(MACHINE_DEFS).map(machine => {
+      const owned = exp().machines.includes(machine.id);
+      if (!owned) return `<div class="machine-slot future" style="left:${machine.x * 100}%;top:${machine.y * 100}%"><span>+</span><small>Emplacement futur</small></div>`;
+      const jobs = machineJobs(machine.id);
+      const active = jobs.find(job => !job.ready);
+      const ready = jobs.find(job => job.ready);
+      const jammed = exp().jam.machineId === machine.id;
+      const recipe = CRAFT_RECIPES.find(item => item.id === (ready || active)?.recipeId);
+      const progress = active ? Math.max(0, Math.min(100, (1 - Number(active.remainingMs || 0) / Math.max(1, Number(active.durationMs || 1))) * 100)) : 0;
+      return `<div class="machine-slot installed ${active && !jammed ? 'working' : ''} ${ready ? 'has-ready' : ''} ${jammed ? 'jammed' : ''}" style="left:${machine.x * 100}%;top:${machine.y * 100}%" data-machine="${machine.id}">
+        <button class="machine-body" data-accelerate-machine="${machine.id}" type="button" title="${active ? 'Toucher pour accélérer' : machine.unlocks.join(' · ')}">
+          ${C.pixelImg(machine.asset, machine.name, 'machine-sprite')}<b>${machine.name}</b>
+          ${active ? `<span class="machine-progress"><i style="width:${progress}%"></i></span><small>${jammed ? 'Bloquée · rendement ralenti' : `${Math.ceil(Number(active.remainingMs || 0) / 1000)} s · toucher = accélérer`}</small>` : `<small>${ready ? 'Production terminée' : 'Disponible'}</small>`}
+        </button>
+        ${jammed ? `<button class="repair-machine" data-repair-machine="${machine.id}" type="button">🧩 Réparer avec le mini-jeu</button>` : ''}
+        ${ready ? `<button class="machine-ready-pickup" data-collect-job="${ready.uid}" data-machine-id="${machine.id}" type="button">${C.pixelImg(recipe?.asset, recipe?.name || 'Objet prêt', 'pickup-icon')}<span>Récupérer</span></button>` : ''}
+      </div>`;
+    }).join('');
+    layer.querySelectorAll('[data-accelerate-machine]').forEach(button => button.addEventListener('click', () => accelerateMachine(button.dataset.accelerateMachine)));
+    layer.querySelectorAll('[data-collect-job]').forEach(button => button.addEventListener('click', event => { event.stopPropagation(); collectAtMachine(button.dataset.collectJob, button.dataset.machineId); }));
+    layer.querySelectorAll('[data-repair-machine]').forEach(button => button.addEventListener('click', event => { event.stopPropagation(); C.toast('Gagne le niveau bonus pour relancer immédiatement la machine.'); C.switchTab('minigame'); }));
   }
 
   function toggleMenuRecipe(recipeId) {
@@ -364,8 +583,6 @@
     const next = exp().farmExtraPlots + 1;
     const coins = next === 1 ? 4500 : 12000;
     const materials = next === 1 ? { plank: 8, stone: 4 } : { plank: 14, metal: 5 };
-    const repNeed = next === 1 ? 180 : 500;
-    if (state().reputation < repNeed) return C.toast(`${repNeed} réputation requise.`);
     if (!C.canPay(coins, materials)) return C.toast('Il manque des ressources pour agrandir la ferme.');
     C.pay(coins, materials);
     exp().farmExtraPlots += 1;
@@ -482,7 +699,7 @@
       const product = SHOP_PRODUCTS[recipe.output.id];
       const stock = exp().shop.stock[recipe.output.id] || 0;
       const unlocked = recipeUnlocked(recipe);
-      return `<article class="shop-card ${unlocked ? '' : 'locked'}">${C.pixelImg(product.asset, product.name, 'pixel-card-icon')}<div><h3>${product.name}</h3><p>Stock : <b>${stock}</b> · Valeur : ${Math.floor(product.price * (1 + (exp().shop.level - 1) * .12))} 🪙</p><div class="cost-row">${C.materialChips(recipe.inputs)}</div><div class="shop-actions"><button class="secondary-button start-craft" data-craft="${recipe.id}" type="button" ${unlocked && C.canPay(0, recipe.inputs) && exp().crafting.length < craftSlots() ? '' : 'disabled'}>Préparer</button><button class="primary-button sell-product" data-product="${recipe.output.id}" type="button" ${stock ? '' : 'disabled'}>Vendre</button></div></div></article>`;
+      return `<article class="shop-card ${unlocked ? '' : 'locked'}">${C.pixelImg(product.asset, product.name, 'pixel-card-icon')}<div><h3>${product.name}</h3><p>Stock : <b>${stock}</b> · Valeur : ${Math.floor(product.price * (1 + (exp().shop.level - 1) * .12))} 🪙</p><div class="cost-row">${C.materialChips(recipe.inputs)}</div><div class="shop-actions"><button class="secondary-button start-craft" data-craft="${recipe.id}" type="button" ${unlocked && C.canPay(0, recipe.inputs) && machineJobs(recipe.machine).length < machineCapacity(recipe.machine) ? '' : 'disabled'}>Préparer</button><button class="primary-button sell-product" data-product="${recipe.output.id}" type="button" ${stock ? '' : 'disabled'}>Vendre</button></div></div></article>`;
     }).join('');
     grid.querySelectorAll('.start-craft').forEach(button => button.addEventListener('click', () => startCraft(button.dataset.craft)));
     grid.querySelectorAll('.sell-product').forEach(button => button.addEventListener('click', () => { sellProduct(button.dataset.product); C.renderAll(); }));
@@ -561,7 +778,7 @@
     const target = C.el('domainSummary');
     if (!target) return;
     const important = ['wood', 'plank', 'stone', 'ore', 'metal', 'nails', 'gear', 'glass_panel', 'fabric', 'rope'];
-    target.innerHTML = `<div class="domain-overview"><span><b>${exp().crafting.length}/${craftSlots()}</b><small>fabrications</small></span><span><b>${exp().staff.filter(item => item.active).length}</b><small>employés actifs</small></span><span><b>${exp().tech.length}</b><small>technologies</small></span><span><b>${exp().establishments.length}</b><small>établissements</small></span></div><div class="domain-resources">${important.map(key => `<span class="resource-chip">${C.itemImg(key)} ${C.ITEMS[key].name} : <b>${state().inventory[key] || 0}</b></span>`).join('')}</div>`;
+    target.innerHTML = `<div class="domain-overview"><span><b>${exp().machines.length}/${Object.keys(MACHINE_DEFS).length}</b><small>machines installées</small></span><span><b>${exp().crafting.filter(job => job.ready).length}</b><small>objets à récupérer</small></span><span><b>${exp().tech.length}</b><small>technologies</small></span><span><b>${exp().establishments.length}</b><small>débouchés de vente</small></span></div><div class="domain-resources">${important.map(key => `<span class="resource-chip">${C.itemImg(key)} ${C.ITEMS[key].name} : <b>${state().inventory[key] || 0}</b></span>`).join('')}</div>`;
   }
 
   function runEmployee(member, definition, now) {
@@ -570,12 +787,13 @@
     member.lastRun = now;
     if (member.id === 'server') {
       C.pullReadyCookingToTray(false);
-      const customer = state().customers.find(item => state().tray.includes(item.recipeId));
+      const customer = state().customers.find(item => item.status !== 'leaving' && state().tray.includes(item.recipeId));
       if (customer) C.serveCustomer(customer.id, true);
     }
     if (member.id === 'cook') {
       const slots = C.getEffects().cookingSlots;
       const customer = state().customers.find(item => {
+        if (item.status === 'leaving') return false;
         const recipe = C.getRecipe(item.recipeId);
         return recipe && Object.entries(recipe.ingredients).every(([key, amount]) => (state().inventory[key] || 0) >= amount);
       });
@@ -620,7 +838,7 @@
     });
     if ((hasTech('auto_register') || hasTech('robot_server')) && now - exp().timers.techServe >= (hasTech('robot_server') ? 15000 : 26000)) {
       C.pullReadyCookingToTray(false);
-      const customer = state().customers.find(item => state().tray.includes(item.recipeId));
+      const customer = state().customers.find(item => item.status !== 'leaving' && state().tray.includes(item.recipeId));
       if (customer) C.serveCustomer(customer.id, true);
       exp().timers.techServe = now; changed = true;
     }
@@ -668,6 +886,22 @@
     }
   }
 
+  function processMachineJam() {
+    const now = Date.now();
+    if (exp().jam.machineId) return;
+    if (now < Number(exp().jam.nextAt || 0)) return;
+    const running = exp().crafting.filter(job => !job.ready);
+    if (!running.length) {
+      exp().jam.nextAt = now + 30000;
+      return;
+    }
+    const job = C.choice(running);
+    exp().jam.machineId = job.machineId;
+    exp().jam.since = now;
+    C.toast(`${MACHINE_DEFS[job.machineId]?.name || 'Une machine'} se bloque : mini-jeu disponible !`);
+    C.saveState();
+  }
+
   function renderWorldEvent() {
     const banner = C.el('worldEventBanner');
     if (!banner) return;
@@ -683,20 +917,34 @@
     const cooked = state().stats.cooked || 0;
     const gathers = state().stats.gathers || 0;
     const harvested = exp().stats.harvested || 0;
+    const miniWins = state().stats.miniWins || 0;
     if (served > observed.served) awardMastery('tavern', (served - observed.served) * 12);
     if (cooked > observed.cooked) awardMastery('kitchen', (cooked - observed.cooked) * 10);
     if (gathers > observed.gathers) awardMastery('exploration', (gathers - observed.gathers) * 8);
     if (harvested > observed.harvestedPlots) awardMastery('farm', (harvested - observed.harvestedPlots) * 12);
+    if (miniWins > Number(observed.miniWins || 0) && exp().jam.machineId) {
+      const repaired = MACHINE_DEFS[exp().jam.machineId];
+      const job = machineJobs(exp().jam.machineId).find(item => !item.ready);
+      if (job) job.remainingMs = Math.max(0, Number(job.remainingMs || 0) - 10000);
+      exp().jam.machineId = '';
+      exp().jam.since = 0;
+      exp().jam.nextAt = Date.now() + 120000 + C.randomInt(0, 60000);
+      state().inventory.gear = (state().inventory.gear || 0) + 1;
+      C.toast(`${repaired?.name || 'Machine'} réparée · +1 engrenage · gros coup d’accélérateur !`);
+    }
     observed.served = served;
     observed.cooked = cooked;
     observed.gathers = gathers;
     observed.harvestedPlots = harvested;
+    observed.miniWins = miniWins;
   }
 
   function renderAll() {
     ensureState();
     renderDomainSummary();
     renderCrafting();
+    renderAtelierGoal();
+    renderMachineRoom();
     renderMenuPlanner();
     renderFarmExtras();
     renderStaff();
@@ -711,6 +959,7 @@
     const crafted = processCrafting();
     processAutomation();
     processWorldEvents();
+    processMachineJam();
     observeProgress();
     if (crafted) C.renderAll();
     else renderAll();
@@ -722,6 +971,9 @@
     if (key === 'staff') return exp().staff.length;
     if (key === 'tech') return exp().tech.length;
     if (key === 'establishments') return exp().establishments.length;
+    if (key === 'machines') return exp().machines.length;
+    if (key === 'serviceSeats') return state().decorInventory.chair || 0;
+    if (key === 'serviceTables') return (state().decorInventory.table_round || 0) + (state().decorInventory.table_square || 0);
     return exp().stats[key] || 0;
   }
 

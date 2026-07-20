@@ -1022,6 +1022,68 @@ img { image-rendering: pixelated; }
 .furniture-item.workbench_station img,.furniture-item.oven_station img,.furniture-item.coffee_station img,.furniture-item.display_station img,.furniture-item.forge_station img,.furniture-item.craft_station img { width:72px; height:78px; }
 .locked { opacity:.58; filter:saturate(.55); }
 
+/* V3.0 — atelier visuel, salles fixes et clients réellement assis */
+.fixed-room-label { align-self:center; padding:5px 9px; border:1px solid #c79b66; border-radius:999px; background:rgba(255,244,215,.82); color:#6b472c; font-size:11px; font-weight:800; }
+.fixed-furniture { cursor:default !important; pointer-events:none; }
+.fixed-furniture.chair { z-index:30 !important; }
+.fixed-furniture.rug_green,.fixed-furniture.rug_red { z-index:7 !important; }
+.customer-avatar { transition:none; }
+.customer-avatar.walking { pointer-events:auto; transform:translate(-50%,-78%) !important; }
+.customer-avatar.walking .customer-sprite { animation:clientWalkBob 260ms steps(2,end) infinite alternate; }
+.customer-avatar.leaving .customer-order,.customer-avatar.leaving .patience-bar { display:none !important; }
+.customer-avatar.seated { width:112px !important; min-height:150px !important; transform:translate(-50%,-73%) !important; padding:0 !important; }
+.customer-avatar.seated::after { bottom:7px !important; width:48px !important; }
+.customer-avatar.seated .customer-sprite { width:92px !important; height:128px !important; margin:0 auto -23px !important; object-fit:contain; }
+.customer-avatar.seated .customer-order { position:relative; z-index:8; margin-top:-5px; }
+.customer-avatar.seated .patience-bar { position:relative; z-index:8; }
+@keyframes clientWalkBob { to { transform:translateY(-3px); } }
+
+.atelier-next-goal { margin:0 0 12px; padding:12px 14px; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; border:3px solid #9b6b3e; border-radius:14px; background:linear-gradient(135deg,#fff0c9,#e6bf80); color:#4b301f; box-shadow:0 5px 0 rgba(62,39,22,.18); }
+.atelier-next-goal .atelier-goal-compass { font-size:30px; }
+.atelier-next-goal small { display:block; color:#805a39; font-weight:900; letter-spacing:.08em; }
+.atelier-next-goal b { display:block; font-size:18px; }
+.atelier-next-goal p { margin:3px 0 0; color:#674a35; }
+.machine-room-world { position:relative; width:min(100%,980px); margin:0 auto 15px; aspect-ratio:16/8.1; overflow:hidden; border:4px solid #76502f; border-radius:18px; background:#c7a16b; box-shadow:0 7px 0 rgba(65,39,22,.24); }
+.machine-room-scene { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; filter:saturate(.72) brightness(.86); opacity:.92; }
+.machine-room-slots { position:absolute; inset:0; z-index:4; }
+.machine-slot { position:absolute; transform:translate(-50%,-50%); width:16%; min-height:23%; display:grid; place-items:center; text-align:center; }
+.machine-slot.future { border:2px dashed rgba(255,238,194,.38); border-radius:50%; color:rgba(255,242,204,.72); background:rgba(54,38,25,.16); pointer-events:none; }
+.machine-slot.future span { font-size:26px; line-height:1; }
+.machine-slot.future small { max-width:90px; font-size:9px; }
+.machine-body { width:100%; min-height:112px; padding:4px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; border:0; background:transparent; color:#fff1c7; cursor:pointer; }
+.machine-body .machine-sprite { width:88px; height:82px; object-fit:contain; filter:drop-shadow(0 5px 0 rgba(35,23,15,.42)); }
+.machine-body b,.machine-body small { position:relative; z-index:2; padding:2px 5px; border-radius:5px; background:rgba(45,29,19,.86); }
+.machine-body small { margin-top:2px; font-size:9px; color:#f5dba8; }
+.machine-slot.working .machine-sprite { animation:machineWork .36s steps(2,end) infinite alternate; }
+.machine-slot.jammed .machine-sprite { filter:grayscale(.55) sepia(.35) drop-shadow(0 5px 0 rgba(35,23,15,.42)); }
+.machine-slot.jammed::before { content:"!"; position:absolute; z-index:13; right:8%; top:2%; width:26px; height:26px; display:grid; place-items:center; border-radius:50%; background:#b64e3f; color:white; font-weight:1000; box-shadow:0 0 0 4px rgba(182,78,63,.22); }
+.repair-machine { position:absolute; z-index:14; left:50%; bottom:-14px; transform:translateX(-50%); width:max-content; max-width:150px; padding:5px 8px; border:2px solid #efca62; border-radius:9px; background:#6a332a; color:#fff0bd; font-size:9px; font-weight:900; cursor:pointer; }
+@keyframes machineWork { to { transform:translateY(-2px) rotate(.8deg); } }
+.machine-progress { width:82%; height:7px; margin:3px auto 0; overflow:hidden; border:1px solid #5a3924; border-radius:999px; background:#c8b18c; }
+.machine-progress i { display:block; height:100%; background:#71a366; }
+.machine-ready-pickup { position:absolute; left:70%; top:-5%; z-index:12; min-width:64px; padding:5px 6px; display:grid; place-items:center; border:3px solid #f4cf62; border-radius:14px; background:#fff3bd; color:#4d321e; box-shadow:0 0 0 5px rgba(248,214,104,.24),0 5px 0 rgba(56,34,18,.32); cursor:pointer; animation:pickupPulse .75s ease-in-out infinite alternate; }
+.machine-ready-pickup .pickup-icon { width:38px; height:38px; object-fit:contain; }
+.machine-ready-pickup span { font-size:9px; font-weight:900; }
+@keyframes pickupPulse { to { transform:translateY(-5px); filter:brightness(1.08); } }
+.machine-room-player { position:absolute; z-index:15; left:50%; top:88%; transform:translate(-50%,-82%); transition:left .58s ease,top .58s ease; pointer-events:none; }
+.machine-room-player img { width:58px; height:80px; object-fit:contain; filter:drop-shadow(0 4px 0 rgba(35,24,16,.32)); }
+.machine-room-player.walking img { animation:clientWalkBob .22s steps(2,end) infinite alternate; }
+.machine-room-help { position:absolute; z-index:18; left:50%; bottom:7px; transform:translateX(-50%); width:min(92%,620px); padding:5px 10px; border:1px solid #9c7046; border-radius:9px; background:rgba(255,244,215,.91); color:#5d3d27; text-align:center; font-size:10px; }
+.production-job.ready { border-color:#cf9f32; background:#fff2bf; box-shadow:0 0 0 3px rgba(224,183,70,.18); }
+
+@media (max-width:700px) {
+  .fixed-room-label { display:none; }
+  .customer-avatar.seated { width:82px !important; min-height:116px !important; }
+  .customer-avatar.seated .customer-sprite { width:72px !important; height:100px !important; margin-bottom:-18px !important; }
+  .atelier-next-goal { grid-template-columns:auto 1fr; }
+  .atelier-next-goal > .badge { grid-column:1/-1; justify-self:start; }
+  .machine-room-world { min-height:420px; aspect-ratio:1.05/1; }
+  .machine-slot { width:25%; min-height:20%; }
+  .machine-body { min-height:92px; }
+  .machine-body .machine-sprite { width:60px; height:58px; }
+  .machine-ready-pickup { left:62%; transform:scale(.86); }
+}
+
 @media (max-width:900px) {
   .hub-link-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .region-node-layer { grid-template-columns:repeat(3,minmax(0,1fr)); }
