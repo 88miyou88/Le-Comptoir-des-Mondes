@@ -3,170 +3,147 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#203a31">
-  <meta name="description" content="Un jeu d’atelier évolutif, de fabrication et de restauration en pixel art.">
+  <meta name="theme-color" content="#182b25">
+  <meta name="description" content="Un jeu d’atelier, de fabrication et de restauration en pixel art.">
   <title>Le Comptoir des Mondes</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=4.0.0-build1">
+  <link rel="stylesheet" href="style.css?v=5.0.0-build1">
 </head>
 <body>
-  <div id="app" class="app-shell v4-shell">
-    <header class="topbar v4-topbar">
+  <div id="app" class="app-shell v5-shell">
+    <header class="topbar v5-topbar">
       <div class="brand">
-        <img class="brand-logo" src="assets/icon.svg" alt="Le Comptoir des Mondes">
+        <img class="brand-logo" src="assets/icon.svg" alt="">
         <div class="brand-copy">
           <strong>Le Comptoir des Mondes</strong>
-          <small><span id="versionLabel">V4.0.0</span> · Le domaine vivant</small>
+          <small><span id="versionLabel">V5.0.0</span> · L’atelier vivant</small>
         </div>
       </div>
       <div class="currencies" aria-label="Ressources principales">
-        <button class="currency" data-open-tab="upgrades" title="Pièces"><span>🪙</span><b id="coinsValue">0</b></button>
-        <button class="currency" data-open-tab="settings" title="Diamants"><span>💎</span><b id="diamondsValue">0</b></button>
+        <button class="currency" data-open-tab="upgrades" type="button" title="Pièces"><span>🪙</span><b id="coinsValue">0</b></button>
+        <button class="currency" data-open-tab="settings" type="button" title="Diamants"><span>💎</span><b id="diamondsValue">0</b></button>
       </div>
     </header>
 
-    <nav class="bottom-nav v4-nav" aria-label="Navigation principale">
-      <button class="nav-button active" data-tab="counter" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Salle</small></button>
-      <button class="nav-button" data-tab="workshop" type="button"><img src="assets/stations/workbench.png" alt=""><small>Atelier</small></button>
-      <button class="nav-button" data-tab="zones" type="button"><img src="assets/resources/wood_log.png" alt=""><small>Collecte</small></button>
-      <button class="nav-button" data-tab="journal" type="button"><img src="assets/furniture/chalkboard_sign.png" alt=""><small>Journal</small></button>
+    <nav class="world-nav" aria-label="Lieux du domaine">
+      <button class="nav-button active" data-tab="workshop" type="button"><img src="assets/stations/workbench.png" alt=""><span><small>CŒUR DU JEU</small><b>Atelier</b></span></button>
+      <button class="nav-button" data-tab="counter" type="button"><img src="assets/furniture/service_counter.png" alt=""><span><small>VENDRE</small><b>Salle</b></span></button>
+      <button class="nav-button" data-tab="zones" type="button"><img src="assets/resources/wood_log.png" alt=""><span><small>RÉCOLTER</small><b>Collecte</b></span></button>
+      <button class="nav-button" data-tab="journal" type="button"><img src="assets/furniture/chalkboard_sign.png" alt=""><span><small>PROGRESSER</small><b>Journal</b></span></button>
     </nav>
 
-    <main class="main-content v4-content">
-      <section id="tab-counter" class="tab-panel active" data-tab-panel="counter">
-        <div class="goal-strip v4-goal">
-          <div><small>PROCHAINE DÉCOUVERTE</small><strong id="activeGoalText">Construire le premier atelier</strong></div>
-          <div class="mini-progress"><span id="activeGoalProgress"></span></div>
-          <button id="goalShortcut" class="small-button" type="button">Journal</button>
-        </div>
-        <div id="worldEventBanner" class="world-event-banner" hidden></div>
-
-        <div class="world-card tavern-frame v4-room-card">
-          <div class="tavern-toolbar">
-            <div class="open-state"><span id="restaurantLamp" class="lamp-dot"></span><b id="restaurantStateLabel">Service ouvert</b></div>
-            <div class="toolbar-actions"><span class="fixed-room-label">Salle principale</span><button id="toggleRestaurant" class="wood-button" type="button">Fermer le service</button></div>
+    <main class="game-stage">
+      <section id="tab-workshop" class="tab-panel scene-panel workshop-panel active" data-tab-panel="workshop">
+        <div class="scene-canvas workshop-canvas">
+          <div class="scene-title"><div><small>LE CŒUR DU DOMAINE</small><h1>Grand atelier</h1></div><button class="scene-link" data-open-tab="zones" type="button">Collecter des ressources ›</button></div>
+          <div id="atelierNextGoal" class="atelier-next-goal"></div>
+          <div id="machineRoomWorld" class="machine-room-world v5-machine-room" aria-label="Grand atelier évolutif">
+            <div class="atelier-wall"><span>ATELIER DU COMPTOIR</span></div>
+            <div id="machineRoomSlots" class="machine-room-slots"></div>
+            <div id="machineStaffLayer" class="room-staff-layer workshop-staff-layer"></div>
+            <div id="machineRoomPlayer" class="machine-room-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
+            <div class="machine-room-help">Touche une machine pour l’accélérer. Une production terminée brille directement dans la pièce.</div>
           </div>
-          <div id="restaurantWorld" class="restaurant-world v4-service-room" aria-label="Salle principale du Comptoir">
-            <img class="room-art" src="assets/regions/tavern_interior.png" alt="Salle principale du Comptoir">
-            <button class="station kitchen-station room-station" data-station="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Plan de travail</small></button>
-            <button class="station storage-station room-station" data-station="storage" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Réserve</small></button>
-            <button class="station register-station room-station" data-station="register" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Comptoir</small></button>
-            <div id="furnitureLayer" class="furniture-layer"></div>
-            <div id="layoutGrid" class="layout-grid" hidden></div>
-            <div id="serviceStaffLayer" class="room-staff-layer"></div>
-            <div id="customerLayer" class="customer-layer"></div>
-            <div id="player" class="player" aria-label="Votre personnage">
-              <img id="playerSprite" class="player-body" src="assets/player/idle_01.png" alt="Artisane du Comptoir">
-              <span class="player-shadow"></span>
+          <div id="domainSummary" class="domain-summary"></div>
+        </div>
+
+        <aside class="action-console workshop-console" aria-label="Établi de fabrication">
+          <div class="console-heading"><div><small>ÉTABLI</small><h2>Que veux-tu fabriquer ?</h2></div><span id="industryCapacityBadge" class="badge">0 en cours</span></div>
+          <div class="console-tabs" role="tablist">
+            <button class="active" data-console-tab="industry" type="button">Production</button>
+            <button data-console-tab="carpentry" type="button">Mobilier</button>
+            <button data-console-tab="technology" type="button">Tech</button>
+            <button data-console-tab="staff" type="button">Équipe</button>
+          </div>
+          <div class="console-body">
+            <section class="console-view active" data-console-panel="industry" data-section="industry">
+              <div id="industryQueue" class="production-queue"></div>
+              <div id="industryFilters" class="filter-row"></div>
+              <div id="industryGrid" class="craft-grid"></div>
+            </section>
+            <section class="console-view" data-console-panel="carpentry" data-section="carpentry">
+              <div class="console-subhead"><b>Menuiserie</b><span id="carpentryLevelBadge" class="badge">Maîtrise 1</span></div>
+              <div id="carpentryQueue" class="production-queue"></div>
+              <div id="carpentryGrid" class="craft-grid"></div>
+            </section>
+            <section class="console-view" data-console-panel="technology" data-section="technology"><div id="technologyGrid" class="tech-tree"></div></section>
+            <section class="console-view" data-console-panel="staff" data-section="staff"><div id="staffSummary" class="system-summary"></div><div id="staffGrid" class="staff-grid"></div></section>
+          </div>
+        </aside>
+      </section>
+
+      <section id="tab-counter" class="tab-panel scene-panel service-panel" data-tab-panel="counter">
+        <div class="scene-canvas service-canvas">
+          <div class="scene-title"><div><small>LA FINALITÉ DE TA PRODUCTION</small><h1>Salle du Comptoir</h1></div><button class="scene-link" data-open-tab="farm" type="button">Passage vers le jardin ›</button></div>
+          <div class="goal-strip v5-goal"><div><small>PROCHAINE DÉCOUVERTE</small><strong id="activeGoalText">Construire le premier atelier</strong></div><div class="mini-progress"><span id="activeGoalProgress"></span></div><button id="goalShortcut" class="small-button" type="button">Voir</button></div>
+          <div id="worldEventBanner" class="world-event-banner" hidden></div>
+          <div class="world-card tavern-frame v5-room-card">
+            <div class="tavern-toolbar"><div class="open-state"><span id="restaurantLamp" class="lamp-dot"></span><b id="restaurantStateLabel">Service ouvert</b></div><button id="toggleRestaurant" class="wood-button" type="button">Fermer le service</button></div>
+            <div id="restaurantWorld" class="restaurant-world v5-service-room" aria-label="Salle principale du Comptoir">
+              <img class="room-art" src="assets/regions/tavern_interior.png" alt="Salle principale du Comptoir">
+              <button class="station kitchen-station room-station" data-station="kitchen" type="button"><img src="assets/stations/prep_station.png" alt=""><small>Cuisiner</small></button>
+              <button class="station storage-station room-station" data-station="storage" type="button"><img src="assets/furniture/storage_chest.png" alt=""><small>Réserve</small></button>
+              <button class="station register-station room-station" data-station="register" type="button"><img src="assets/furniture/service_counter.png" alt=""><small>Comptoir</small></button>
+              <div id="furnitureLayer" class="furniture-layer"></div><div id="layoutGrid" class="layout-grid" hidden></div>
+              <div id="serviceStaffLayer" class="room-staff-layer"></div><div id="customerLayer" class="customer-layer"></div>
+              <div id="player" class="player" aria-label="Votre personnage"><img id="playerSprite" class="player-body" src="assets/player/idle_01.png" alt="Artisane du Comptoir"><span class="player-shadow"></span></div>
+              <div id="moveMarker" class="move-marker" hidden></div><div id="closedCurtain" class="closed-curtain" hidden></div>
             </div>
-            <div id="moveMarker" class="move-marker" hidden></div>
-            <div id="closedCurtain" class="closed-curtain" hidden></div>
+            <div class="world-footer"><div><span class="status-dot"></span><span id="worldStatus">Touche le plancher pour te déplacer.</span></div><button id="contextAction" class="primary-button" type="button">Cuisiner</button></div>
           </div>
-          <div class="world-footer">
-            <div><span class="status-dot"></span><span id="worldStatus">Touche le plancher pour te déplacer.</span></div>
-            <button id="contextAction" class="primary-button" type="button">Cuisiner</button>
-          </div>
-        </div>
-        <div id="layoutEditorPanel" class="layout-editor-panel" hidden></div>
-
-        <nav class="corridor-strip" aria-label="Couloirs du domaine">
-          <button data-open-tab="workshop" type="button"><span class="corridor-art"><img src="assets/stations/workbench.png" alt=""></span><span><small>COULOIR OUEST</small><b>Grand atelier</b><em>Machines · craft · équipe</em></span></button>
-          <button data-open-tab="farm" type="button"><span class="corridor-art garden"><img src="assets/food/vegetables_bundle.png" alt=""></span><span><small>PASSAGE VITRÉ</small><b>Jardin</b><em>Planter · récolter</em></span></button>
-          <button data-open-tab="zones" type="button"><span class="corridor-art store"><img src="assets/resources/wood_log.png" alt=""></span><span><small>ESCALIER BAS</small><b>Collecte</b><em>Jouer · rapporter</em></span></button>
-        </nav>
-
-        <section id="counterKitchen" class="counter-kitchen panel-card v4-kitchen-console">
-          <div class="panel-heading"><div><small>CUISINE OUVERTE</small><h2>Préparer sans quitter la salle</h2></div><span id="counterKitchenCapacity" class="badge">0/2</span></div>
-          <div id="counterCookingQueue" class="counter-cooking-queue"></div>
-          <div id="counterRecipeGrid" class="counter-recipe-grid"></div>
-        </section>
-
-        <div class="dashboard-grid v4-service-dashboard">
-          <article class="panel-card orders-card"><div class="panel-heading"><h2>Commandes en salle</h2><span id="customerCountBadge" class="badge">0 client</span></div><div id="customerQueue" class="customer-queue empty-state">La salle est calme.</div></article>
-          <article class="panel-card"><div class="panel-heading"><h2>Plats prêts</h2><span id="trayCapacityLabel" class="badge">0/3</span></div><small id="traySummary" class="tray-summary-text">Capacité : 0/3</small><div id="readyTray" class="ready-tray empty-state">Aucun plat prêt.</div><button class="secondary-button tray-upgrade-shortcut" data-open-tab="upgrades" type="button">Améliorer les plateaux</button></article>
+          <div id="layoutEditorPanel" class="layout-editor-panel" hidden></div>
         </div>
 
-        <details class="domain-drawer kitchen-drawer" data-section="kitchen">
-          <summary><span>📖 Toutes les recettes</span><small>Carte, ingrédients et files de préparation</small></summary>
-          <div class="drawer-body">
-            <div class="section-header compact"><div><h2>Livre de cuisine</h2><p>Les recettes complexes se débloquent grâce aux machines construites.</p></div><span id="kitchenSpeedLabel" class="badge">Vitesse normale</span></div>
-            <div id="menuPlanner" class="menu-planner"></div><div id="kitchenCapacitySummary" class="kitchen-summary"></div><div id="cookingQueue" class="cooking-queue"></div><div id="recipeGrid" class="card-grid"></div>
+        <aside class="action-console service-console">
+          <div class="console-heading"><div><small>SERVICE EN DIRECT</small><h2>Commandes & cuisine</h2></div><span id="customerCountBadge" class="badge">0 client</span></div>
+          <div class="console-tabs" role="tablist"><button class="active" data-console-tab="orders" type="button">Commandes</button><button data-console-tab="kitchen" type="button">Cuisine</button><button data-console-tab="tray" type="button">Plats prêts</button><button data-console-tab="menu" type="button">Carte</button></div>
+          <div class="console-body">
+            <section class="console-view active" data-console-panel="orders"><div id="customerQueue" class="customer-queue empty-state">La salle est calme.</div></section>
+            <section id="counterKitchen" class="console-view" data-console-panel="kitchen" data-section="kitchen">
+              <div class="console-subhead"><b>Préparer sans quitter la salle</b><span id="counterKitchenCapacity" class="badge">0/2</span></div>
+              <div id="counterCookingQueue" class="counter-cooking-queue"></div><div id="counterRecipeGrid" class="counter-recipe-grid"></div>
+            </section>
+            <section class="console-view" data-console-panel="tray"><div class="console-subhead"><b>Stock de plats</b><span id="trayCapacityLabel" class="badge">0/3</span></div><small id="traySummary" class="tray-summary-text">Capacité : 0/3</small><div id="readyTray" class="ready-tray empty-state">Aucun plat prêt.</div><button class="secondary-button wide" data-open-tab="upgrades" type="button">Améliorer les plateaux</button></section>
+            <section class="console-view" data-console-panel="menu"><div id="menuPlanner" class="menu-planner"></div><div class="legacy-kitchen" aria-hidden="true"><span id="kitchenSpeedLabel"></span><div id="kitchenCapacitySummary"></div><div id="cookingQueue"></div><div id="recipeGrid"></div></div></section>
           </div>
-        </details>
+        </aside>
       </section>
 
-      <section id="tab-workshop" class="tab-panel" data-tab-panel="workshop">
-        <div class="section-header v4-section-head"><div><small>LE CŒUR DU JEU</small><h1>Grand atelier</h1><p>Transforme les ressources, construis les machines, puis fabrique tout ce qui développe le domaine.</p></div><button class="secondary-button" data-open-tab="counter" type="button">Retour par le couloir</button></div>
-        <div id="atelierNextGoal" class="atelier-next-goal"></div>
-        <div id="domainSummary" class="domain-summary"></div>
-
-        <div id="machineRoomWorld" class="machine-room-world v4-machine-room" aria-label="Grand atelier évolutif">
-          <div class="atelier-wall"><span>ATELIER DU COMPTOIR</span></div>
-          <div id="machineRoomSlots" class="machine-room-slots"></div>
-          <div id="machineStaffLayer" class="room-staff-layer workshop-staff-layer"></div>
-          <div id="machineRoomPlayer" class="machine-room-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div>
-          <div class="machine-room-help">Une production prête brille : touche-la pour marcher jusqu’à la machine et la récupérer.</div>
+      <section id="tab-farm" class="tab-panel scene-panel farm-panel" data-tab-panel="farm">
+        <div class="scene-canvas farm-canvas">
+          <div class="scene-title"><div><small>PASSAGE VITRÉ</small><h1>Jardin du Comptoir</h1></div><button class="scene-link" data-open-tab="counter" type="button">‹ Retour à la salle</button></div>
+          <div class="farm-world v5-farm-world"><img class="farm-scene" src="assets/regions/forest.png" alt="Jardin du Comptoir"><div id="farmPlotGrid" class="farm-grid"></div><div id="farmPlayer" class="farm-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div><div id="farmStaffLayer" class="room-staff-layer farm-staff-layer"></div><div id="farmChoicePanel" class="farm-choice-panel"></div></div>
         </div>
-
-        <section class="craft-flow panel-card">
-          <div class="craft-flow-title"><small>BOUCLE PRINCIPALE</small><h2>Tout part de l’atelier</h2></div>
-          <div class="craft-flow-steps"><span><b>1</b>Collecter</span><i>›</i><span><b>2</b>Transformer</span><i>›</i><span><b>3</b>Assembler</span><i>›</i><span><b>4</b>Débloquer</span><i>›</i><span><b>5</b>Vendre au service</span></div>
-        </section>
-
-        <details class="atelier-drawer" data-section="industry" open>
-          <summary><span><img src="assets/stations/craft_machine.png" alt=""> Production & machines</span><small>Matériaux, composants et nouvelles machines</small></summary>
-          <div class="drawer-body"><div id="industryQueue" class="production-queue"></div><div id="industryFilters" class="filter-row"></div><div id="industryGrid" class="craft-grid"></div></div>
-        </details>
-        <details class="atelier-drawer" data-section="carpentry">
-          <summary><span><img src="assets/stations/workbench.png" alt=""> Menuiserie</span><small>Meubles qui apparaissent réellement dans la salle</small></summary>
-          <div class="drawer-body"><span id="carpentryLevelBadge" class="badge">Niveau 1</span><div id="carpentryQueue" class="production-queue"></div><div id="carpentryGrid" class="craft-grid"></div></div>
-        </details>
-        <details class="atelier-drawer" data-section="technology">
-          <summary><span><img src="assets/stations/forge.png" alt=""> Technologies</span><small>Électricité, convoyeurs, robots et IA</small></summary>
-          <div id="technologyGrid" class="tech-tree drawer-body"></div>
-        </details>
-        <details class="atelier-drawer" data-section="staff">
-          <summary><span><img src="assets/npcs/tavern_worker_female_01.png" alt=""> Équipe visible</span><small>Recruter les personnages que tu verras travailler</small></summary>
-          <div class="drawer-body"><div id="staffSummary" class="system-summary"></div><div id="staffGrid" class="staff-grid"></div></div>
-        </details>
+        <aside class="action-console farm-console"><div class="console-heading"><div><small>JARDIN</small><h2>Semer & agrandir</h2></div></div><div class="console-body always"><div id="farmSeeds" class="farm-seeds"></div><div id="farmSeedShop" class="farm-seed-shop"></div><div id="farmExpansionPanel" class="system-panel"></div></div></aside>
       </section>
 
-      <section id="tab-farm" class="tab-panel" data-tab-panel="farm">
-        <div class="section-header v4-section-head"><div><small>PASSAGE VITRÉ</small><h1>Jardin du Comptoir</h1><p>Une vraie annexe du domaine : plante, récolte et agrandis les terres.</p></div><button class="secondary-button" data-open-tab="counter" type="button">Retour à la salle</button></div>
-        <div id="farmSeeds" class="farm-seeds"></div><div id="farmSeedShop" class="farm-seed-shop"></div>
-        <div class="farm-world v4-farm-world"><img class="farm-scene" src="assets/regions/forest.png" alt="Jardin du Comptoir"><div id="farmPlotGrid" class="farm-grid"></div><div id="farmPlayer" class="farm-player"><img src="assets/player/idle_01.png" alt="Votre personnage"></div><div id="farmStaffLayer" class="room-staff-layer farm-staff-layer"></div><div id="farmChoicePanel" class="farm-choice-panel"></div></div>
-        <div id="farmExpansionPanel" class="system-panel"></div>
+      <section id="tab-zones" class="tab-panel scene-panel gathering-panel" data-tab-panel="zones">
+        <div class="scene-canvas gathering-canvas">
+          <div class="scene-title"><div><small>AUCUNE ÉNERGIE · AUCUNE ATTENTE</small><h1>Hall de collecte</h1></div><button class="scene-link" data-open-tab="workshop" type="button">Rapporter à l’atelier ›</button></div>
+          <div id="gatheringHub" class="gathering-hub"></div><div id="gatheringStage" class="gathering-stage" hidden></div>
+          <div id="zoneGrid" class="zone-grid legacy-zones" hidden></div><span id="zoneProgressBadge" hidden></span>
+        </div>
+        <aside class="action-console gathering-console"><div class="console-heading"><div><small>RESSOURCES</small><h2>Choisis une activité</h2></div></div><div class="console-tabs" role="tablist"><button class="active" data-console-tab="guide" type="button">Guide</button><button data-console-tab="minigame" type="button">Tri bonus</button><button data-console-tab="market" type="button">Marché</button></div><div class="console-body">
+          <section class="console-view active gathering-guide" data-console-panel="guide"><h3>Joue directement dans le décor</h3><p>Le bois, la pierre et le minerai viennent de vraies parties courtes. Chaque maîtrise augmente les gains : tes crafts grossissent sans transformer le jeu en attente.</p><div class="loop-card"><span>JOUER</span><i>→</i><span>RÉCOLTER</span><i>→</i><span>CRAFT</span></div></section>
+          <section class="console-view" data-console-panel="minigame" data-section="minigame"><div class="mini-stats"><div><small>Coups</small><b id="movesLeft">0</b></div><div><small>Score</small><b id="miniScore">0</b></div><div><small>Gain</small><b id="miniReward">0 🪙</b></div></div><div class="objective-box"><small>Objectif</small><strong id="minigameObjective">Retirer toutes les cases</strong></div><div id="miniObjectiveDetails" class="objective-details"></div><div class="board-wrap"><div id="miniBoard" class="mini-board" role="grid" aria-label="Grille de tri"></div></div><div id="miniBoosters" class="mini-boosters"><button data-mini-tool="hammer" type="button">🔨 Marteau <small>3</small></button><button data-mini-tool="bomb" type="button">💣 Bombe <small>2</small></button><button id="shuffleMini" type="button">🔀 Mélanger</button></div><div class="button-row"><button id="restartMini" class="secondary-button" type="button">Recommencer</button></div><p id="miniMessage" class="message" aria-live="polite">Touche un groupe d’au moins deux cases.</p><span id="minigameLevelBadge" class="badge">Niveau 1</span></section>
+          <section class="console-view" data-console-panel="market"><p class="console-intro">Le marché dépanne la cuisine. Les ressources de craft, elles, se gagnent en jouant.</p><div id="ingredientMarket" class="ingredient-market"></div></section>
+        </div></aside>
       </section>
 
-      <section id="tab-zones" class="tab-panel" data-tab-panel="zones">
-        <div class="section-header v4-section-head"><div><small>SOUS-SOL DU DOMAINE</small><h1>Salle de collecte</h1><p>Des activités courtes et animées pour rapporter les ressources de base à l’atelier.</p></div><span class="badge">Aucune énergie · aucune attente</span></div>
-        <div id="gatheringHub" class="gathering-hub"></div><div id="gatheringStage" class="gathering-stage" hidden></div>
-        <details class="domain-drawer minigame-drawer" data-section="minigame">
-          <summary><span>🧺 Tri de la réserve</span><small>Match de groupes · boosters · tissu</small></summary>
-          <div class="drawer-body">
-            <div class="section-header compact"><div><h2>Tri de la réserve</h2><p>Crée de gros groupes et utilise les outils lorsque la grille se bloque.</p></div><span id="minigameLevelBadge" class="badge">Niveau 1</span></div>
-            <div class="minigame-layout"><article class="panel-card minigame-info"><div class="objective-box"><small>Objectif</small><strong id="minigameObjective">Retirer toutes les bulles</strong></div><div class="mini-stats"><div><small>Coups</small><b id="movesLeft">0</b></div><div><small>Score</small><b id="miniScore">0</b></div><div><small>Récompense</small><b id="miniReward">0 🪙</b></div></div><div id="miniObjectiveDetails" class="objective-details"></div><div id="miniBoosters" class="mini-boosters"><button data-mini-tool="hammer" type="button">🔨 Marteau <small>3</small></button><button data-mini-tool="bomb" type="button">💣 Bombe <small>2</small></button><button id="shuffleMini" type="button">🔀 Mélanger</button></div><div class="button-row"><button id="restartMini" class="secondary-button" type="button">Recommencer</button></div><p id="miniMessage" class="message" aria-live="polite">Touche un groupe d’au moins deux cases.</p></article><div class="board-wrap"><div id="miniBoard" class="mini-board" role="grid" aria-label="Grille de tri 7 par 7"></div></div></div>
-          </div>
-        </details>
-        <details class="domain-drawer market-drawer"><summary><span>🧺 Marché aux ingrédients</span><small>Acheter seulement ce qui manque à la cuisine</small></summary><div class="drawer-body"><div id="ingredientMarket" class="ingredient-market"></div></div></details>
-      </section>
-
-      <section id="tab-journal" class="tab-panel" data-tab-panel="journal">
-        <div class="section-header v4-section-head"><div><small>PROGRESSION PERMANENTE</small><h1>Journal du domaine</h1><p>Tous les objectifs et réglages secondaires sont rangés ici, sans encombrer les salles.</p></div></div>
-        <div class="journal-shortcuts"><button data-open-section="objectives" type="button">🧭 <span><b>Quêtes</b><small>Prochain objectif</small></span></button><button data-open-section="upgrades" type="button">⚙️ <span><b>Améliorations</b><small>Capacité et confort</small></span></button><button data-open-section="collections" type="button">🏆 <span><b>Collections</b><small>Bonus permanents</small></span></button><button data-open-section="progress" type="button">📊 <span><b>Progression</b><small>Maîtrises et statistiques</small></span></button></div>
-
-        <details class="journal-drawer" data-section="objectives" open><summary><span>🧭 Quêtes & découvertes</span><span id="objectiveProgressBadge" class="badge">0/40</span></summary><div id="objectiveList" class="objective-list drawer-body"></div></details>
-        <details class="journal-drawer" data-section="upgrades"><summary><span>⚙️ Améliorations du domaine</span><small>Service · cuisine · automatisation</small></summary><div class="drawer-body"><div class="filter-row"><button class="filter-chip active" data-upgrade-filter="all" type="button">Toutes</button><button class="filter-chip" data-upgrade-filter="service" type="button">Service</button><button class="filter-chip" data-upgrade-filter="kitchen" type="button">Cuisine</button><button class="filter-chip" data-upgrade-filter="automation" type="button">Auto</button></div><div id="upgradeGrid" class="card-grid"></div></div></details>
-        <details class="journal-drawer" data-section="collections"><summary><span>🏆 Collections</span><span id="collectionProgressBadge" class="badge">0/25</span></summary><div id="collectionList" class="collection-list drawer-body"></div></details>
-        <details class="journal-drawer" data-section="progress"><summary><span>📊 Progression du domaine</span><small>Maîtrises, établissements et statistiques</small></summary><div class="drawer-body"><div id="masteryGrid" class="mastery-grid"></div><h2>Établissements</h2><div id="establishmentGrid" class="establishment-grid"></div><h2>Statistiques</h2><div id="expandedStats" class="stats-grid"></div></div></details>
-        <details class="journal-drawer" data-section="settings"><summary><span>🔧 Réglages & sauvegarde</span><small>Confort, import et export</small></summary><div class="settings-grid drawer-body"><article class="panel-card"><h2>Déplacement</h2><label class="setting-row"><span><b>Contrôle</b><small>Destination ou suivi du doigt.</small></span><select id="movementMode"><option value="destination">Aller au point touché</option><option value="follow">Suivre le doigt</option></select></label><label class="setting-row switch-row"><span><b>Marqueur</b><small>Affiche la destination.</small></span><input id="showMoveMarker" type="checkbox" checked></label></article><article class="panel-card"><h2>Confort</h2><label class="setting-row switch-row"><span><b>Sons</b><small>Petits sons d’interface.</small></span><input id="soundToggle" type="checkbox"></label><label class="setting-row switch-row"><span><b>Animations réduites</b><small>Limite les mouvements décoratifs.</small></span><input id="reducedMotionToggle" type="checkbox"></label><label class="setting-row switch-row"><span><b>Vibrations</b><small>Retour tactile compatible.</small></span><input id="vibrationToggle" type="checkbox" checked></label><button id="openTutorial" class="secondary-button wide" type="button">Revoir l’introduction</button></article><article class="panel-card"><h2>Coffre du jour</h2><p id="freeChestStatus">Disponible maintenant.</p><button id="claimFreeChest" class="primary-button wide" type="button">Ouvrir</button></article><article class="panel-card"><h2>Sauvegarde</h2><p>La partie reste sur cet appareil. Exporte-la avant une grosse mise à jour.</p><div class="button-stack"><button id="saveNow" class="secondary-button" type="button">Sauvegarder</button><button id="exportSave" class="secondary-button" type="button">Exporter</button><label class="secondary-button file-button">Importer<input id="importSave" type="file" accept="application/json"></label><button id="resetGame" class="danger-button" type="button">Réinitialiser</button></div><small id="lastSavedLabel">Jamais sauvegardée</small></article></div></details>
+      <section id="tab-journal" class="tab-panel scene-panel journal-panel" data-tab-panel="journal">
+        <div class="journal-sidebar"><small>JOURNAL DU DOMAINE</small><h1>Toujours un prochain objectif</h1><p>Les systèmes secondaires restent ici. Ils ne recouvrent plus les salles.</p><div class="journal-shortcuts"><button class="active" data-journal-tab="objectives" type="button">🧭 <span><b>Objectifs</b><small>Prochaine découverte</small></span></button><button data-journal-tab="upgrades" type="button">⚙️ <span><b>Améliorations</b><small>Capacité et confort</small></span></button><button data-journal-tab="collections" type="button">🏆 <span><b>Collections</b><small>Bonus permanents</small></span></button><button data-journal-tab="progress" type="button">📊 <span><b>Progression</b><small>Maîtrises et stats</small></span></button><button data-journal-tab="settings" type="button">🔧 <span><b>Réglages</b><small>Sauvegarde et confort</small></span></button></div></div>
+        <div class="journal-content">
+          <section class="journal-view active" data-journal-panel="objectives" data-section="objectives"><div class="journal-heading"><h2>Quêtes & découvertes</h2><span id="objectiveProgressBadge" class="badge">0/40</span></div><div id="objectiveList" class="objective-list"></div></section>
+          <section class="journal-view" data-journal-panel="upgrades" data-section="upgrades"><div class="journal-heading"><h2>Améliorations du domaine</h2></div><div class="filter-row"><button class="filter-chip active" data-upgrade-filter="all" type="button">Toutes</button><button class="filter-chip" data-upgrade-filter="service" type="button">Service</button><button class="filter-chip" data-upgrade-filter="kitchen" type="button">Cuisine</button><button class="filter-chip" data-upgrade-filter="automation" type="button">Automatisation</button></div><div id="upgradeGrid" class="card-grid"></div></section>
+          <section class="journal-view" data-journal-panel="collections" data-section="collections"><div class="journal-heading"><h2>Collections</h2><span id="collectionProgressBadge" class="badge">0/25</span></div><div id="collectionList" class="collection-list"></div></section>
+          <section class="journal-view" data-journal-panel="progress" data-section="progress"><div class="journal-heading"><h2>Progression permanente</h2></div><div id="masteryGrid" class="mastery-grid"></div><h2>Établissements</h2><div id="establishmentGrid" class="establishment-grid"></div><h2>Statistiques</h2><div id="expandedStats" class="stats-grid"></div></section>
+          <section class="journal-view" data-journal-panel="settings" data-section="settings"><div class="journal-heading"><h2>Réglages & sauvegarde</h2></div><div class="settings-grid"><article class="panel-card"><h2>Déplacement</h2><label class="setting-row"><span><b>Contrôle</b><small>Destination ou suivi du doigt.</small></span><select id="movementMode"><option value="destination">Aller au point touché</option><option value="follow">Suivre le doigt</option></select></label><label class="setting-row switch-row"><span><b>Marqueur</b><small>Affiche la destination.</small></span><input id="showMoveMarker" type="checkbox" checked></label></article><article class="panel-card"><h2>Confort</h2><label class="setting-row switch-row"><span><b>Sons</b></span><input id="soundToggle" type="checkbox"></label><label class="setting-row switch-row"><span><b>Animations réduites</b></span><input id="reducedMotionToggle" type="checkbox"></label><label class="setting-row switch-row"><span><b>Vibrations</b></span><input id="vibrationToggle" type="checkbox" checked></label><button id="openTutorial" class="secondary-button wide" type="button">Revoir l’introduction</button></article><article class="panel-card"><h2>Coffre du jour</h2><p id="freeChestStatus">Disponible maintenant.</p><button id="claimFreeChest" class="primary-button wide" type="button">Ouvrir</button></article><article class="panel-card"><h2>Sauvegarde</h2><div class="button-stack"><button id="saveNow" class="secondary-button" type="button">Sauvegarder</button><button id="exportSave" class="secondary-button" type="button">Exporter</button><label class="secondary-button file-button">Importer<input id="importSave" type="file" accept="application/json"></label><button id="resetGame" class="danger-button" type="button">Réinitialiser</button></div><small id="lastSavedLabel">Jamais sauvegardée</small></article></div></section>
+        </div>
       </section>
     </main>
-
   </div>
-
   <div id="toastLayer" class="toast-layer" aria-live="polite"></div><div id="modalLayer" class="modal-layer" hidden></div>
-  <script src="app.js?v=4.0.0-build1"></script><script src="expansion.js?v=4.0.0-build1"></script>
+  <script src="app.js?v=5.0.0-build1"></script><script src="expansion.js?v=5.0.0-build1"></script>
 </body>
 </html>

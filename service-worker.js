@@ -1,6 +1,6 @@
-const CACHE_NAME = 'comptoir-des-mondes-v4.0.0-build1';
+const CACHE_NAME = 'comptoir-des-mondes-v5.0.0-build1';
 const ASSETS = [
-  './', './index.html', './style.css?v=4.0.0-build1', './app.js?v=4.0.0-build1', './expansion.js?v=4.0.0-build1', './manifest.json', './assets/icon.svg',
+  './', './index.html', './style.css?v=5.0.0-build1', './app.js?v=5.0.0-build1', './expansion.js?v=5.0.0-build1', './manifest.json', './assets/icon.svg',
   './assets/regions/tavern_interior.png', './assets/player/idle_01.png', './assets/player/walk_01.png', './assets/player/carry_01.png',
   './assets/clients/client_red_haired_01.png', './assets/clients/client_red_haired_02.png', './assets/clients/client_red_haired_03.png',
   './assets/clients/client_cat_01.png', './assets/clients/client_cat_02.png', './assets/clients/client_cat_03.png',

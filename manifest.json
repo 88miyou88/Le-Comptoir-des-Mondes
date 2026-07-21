@@ -6,14 +6,12 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#d9bf91",
-  "theme_color": "#263e36",
-  "icons": [
-    {
-      "src": "assets/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
+  "background_color": "#14251f",
+  "theme_color": "#182b25",
+  "icons": [{
+    "src": "assets/icon.svg",
+    "sizes": "any",
+    "type": "image/svg+xml",
+    "purpose": "any maskable"
+  }]
 }

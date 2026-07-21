@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '4.0.0';
+  const GAME_VERSION = '5.0.0';
   const SAVE_VERSION = 5;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
@@ -328,7 +328,7 @@
   }
 
   let state = loadState();
-  let currentTab = 'counter';
+  let currentTab = 'workshop';
   let upgradeFilter = 'all';
   let movementTarget = { x: state.player.x, y: state.player.y };
   let followPointerActive = false;
@@ -615,6 +615,23 @@
     return CLIENT_SEATED_PATHS[`${kind}:${seat?.orientation || 'front_right'}`] || CLIENT_SEATED_PATHS[`${kind}:front_right`];
   }
 
+  function activateConsolePanel(root, panelName) {
+    if (!root || !panelName) return;
+    const panels = [...root.querySelectorAll('[data-console-panel]')];
+    if (!panels.some(panel => panel.dataset.consolePanel === panelName)) return;
+    panels.forEach(panel => panel.classList.toggle('active', panel.dataset.consolePanel === panelName));
+    root.querySelectorAll('[data-console-tab]').forEach(button => button.classList.toggle('active', button.dataset.consoleTab === panelName));
+  }
+
+  function activateJournalPanel(panelName) {
+    const root = el('tab-journal');
+    if (!root || !panelName) return;
+    const panels = [...root.querySelectorAll('[data-journal-panel]')];
+    if (!panels.some(panel => panel.dataset.journalPanel === panelName)) return;
+    panels.forEach(panel => panel.classList.toggle('active', panel.dataset.journalPanel === panelName));
+    root.querySelectorAll('[data-journal-tab]').forEach(button => button.classList.toggle('active', button.dataset.journalTab === panelName));
+  }
+
   function switchTab(tab) {
     const routes = {
       kitchen: 'counter', carpentry: 'workshop', industry: 'workshop', technology: 'workshop', staff: 'workshop',
@@ -623,15 +640,14 @@
     const destination = routes[tab] || tab;
     currentTab = destination;
     document.querySelectorAll('[data-tab-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel === destination));
-    document.querySelectorAll('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === destination));
-    window.scrollTo({ top: 0, behavior: state.settings.reducedMotion ? 'auto' : 'smooth' });
+    const navDestination = destination === 'farm' ? 'counter' : destination;
+    document.querySelectorAll('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === navDestination));
     if (tab === 'minigame' && !mini) initMiniLevel();
     renderAll();
-    if (routes[tab]) {
-      const section = document.querySelector(`[data-section="${tab}"]`);
-      if (section?.tagName === 'DETAILS') section.open = true;
-      setTimeout(() => section?.scrollIntoView({ behavior: state.settings.reducedMotion ? 'auto' : 'smooth', block: 'start' }), 80);
-    }
+    if (destination === 'workshop' && routes[tab]) activateConsolePanel(el('tab-workshop'), tab);
+    if (destination === 'counter' && tab === 'kitchen') activateConsolePanel(el('tab-counter'), 'kitchen');
+    if (destination === 'zones' && tab === 'minigame') activateConsolePanel(el('tab-zones'), 'minigame');
+    if (destination === 'journal' && routes[tab]) activateJournalPanel(tab);
   }
 
   function renderHUD() {
@@ -1648,8 +1664,7 @@
         if (action.type === 'serve') serveCustomer(action.customerId);
         if (action.type === 'tab') switchTab(action.tab);
         if (action.type === 'counterKitchen') {
-          switchTab('counter');
-          setTimeout(() => el('counterKitchen')?.scrollIntoView({ behavior: state.settings.reducedMotion ? 'auto' : 'smooth', block: 'center' }), 60);
+          switchTab('kitchen');
         }
       }
     }
@@ -2056,6 +2071,12 @@
     document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.tab)));
     document.querySelectorAll('[data-open-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.openTab)));
     document.querySelectorAll('[data-open-section]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.openSection)));
+    document.querySelectorAll('[data-console-tab]').forEach(button => button.addEventListener('click', () => {
+      const consoleRoot = button.closest('.action-console');
+      activateConsolePanel(consoleRoot, button.dataset.consoleTab);
+      if (button.dataset.consoleTab === 'minigame' && !mini) { initMiniLevel(); renderMini(); }
+    }));
+    document.querySelectorAll('[data-journal-tab]').forEach(button => button.addEventListener('click', () => activateJournalPanel(button.dataset.journalTab)));
     el('goalShortcut').addEventListener('click', () => switchTab('objectives'));
     el('contextAction').addEventListener('click', () => switchTab('kitchen'));
     el('toggleRestaurant').addEventListener('click', toggleRestaurant);

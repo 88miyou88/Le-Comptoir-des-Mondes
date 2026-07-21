@@ -206,6 +206,322 @@ body { background:#cfae78; background-image:linear-gradient(rgba(255,244,211,.72
   .mini-boosters { grid-template-columns:1fr; }
 }
 
+/* V5.0 — véritable interface de jeu : une scène et un panneau contextuel. */
+body:has(.v5-shell) {
+  margin: 0;
+  height: 100dvh;
+  overflow: hidden;
+  color: #f7e8c4;
+  background: #14251f;
+  background-image:
+    radial-gradient(circle at 50% -20%, rgba(105,149,116,.25), transparent 44%),
+    linear-gradient(135deg, #1d352d, #0f1e1a);
+}
+
+.v5-shell {
+  --hud: 58px;
+  --world-nav: 66px;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0 !important;
+  display: grid;
+  grid-template-rows: var(--hud) var(--world-nav) minmax(0, 1fr);
+  overflow: hidden;
+  background: transparent;
+}
+
+.v5-topbar {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 50;
+  height: var(--hud);
+  min-height: 0;
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-bottom: 1px solid rgba(238,208,151,.28);
+  background: linear-gradient(180deg, #27483c, #1a332b);
+  box-shadow: 0 5px 18px rgba(5,12,10,.35);
+}
+
+.v5-topbar .brand { display: flex; align-items: center; gap: 9px; }
+.v5-topbar .brand-logo { width: 40px; height: 40px; object-fit: contain; }
+.v5-topbar .brand-copy { display: grid; line-height: 1.05; }
+.v5-topbar .brand-copy strong { color: #fff0c2; font: 800 18px/1 Georgia, serif; }
+.v5-topbar .brand-copy small { margin-top: 4px; color: #b9cfbd; font: 700 10px/1.1 "Trebuchet MS", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+.v5-topbar .currencies { display: flex; gap: 7px; }
+.v5-topbar .currency { min-width: 76px; min-height: 38px; padding: 5px 9px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #a77a46; border-radius: 10px; background: linear-gradient(#f9e7bd,#d7b579); color: #422d20; box-shadow: 0 3px 0 #6a492e; font-weight: 900; }
+
+.world-nav {
+  position: relative;
+  z-index: 45;
+  height: var(--world-nav);
+  padding: 7px max(10px, env(safe-area-inset-left));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 170px));
+  justify-content: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(239,207,145,.22);
+  background: rgba(11,25,21,.96);
+}
+
+.world-nav .nav-button {
+  min-width: 0;
+  height: 51px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  border: 1px solid rgba(218,183,116,.2);
+  border-radius: 10px;
+  background: rgba(53,82,68,.38);
+  color: #d9c69e;
+  box-shadow: none;
+  cursor: pointer;
+}
+.world-nav .nav-button img { width: 38px; height: 38px; object-fit: contain; image-rendering: auto; filter: saturate(.75) brightness(.9); }
+.world-nav .nav-button span { min-width: 0; display: grid; text-align: left; }
+.world-nav .nav-button small { color: #83a793; font-size: 8px; font-weight: 900; letter-spacing: .08em; }
+.world-nav .nav-button b { color: inherit; font: 800 14px/1.1 Georgia, serif; }
+.world-nav .nav-button.active { border-color: #d8a852; background: linear-gradient(135deg, #416d59, #2a4d40); color: #fff1bf; box-shadow: inset 0 0 0 1px rgba(255,226,158,.22), 0 0 20px rgba(216,168,82,.12); }
+.world-nav .nav-button.active img { filter: saturate(1.1) brightness(1.08) drop-shadow(0 2px 0 rgba(0,0,0,.25)); }
+
+.game-stage {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #152821;
+}
+
+.v5-shell .scene-panel { display: none !important; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+.v5-shell .scene-panel.active { display: grid !important; grid-template-columns: minmax(0, 1fr) clamp(340px, 31vw, 450px); }
+.scene-canvas { position: relative; min-width: 0; min-height: 0; padding: 10px; display: grid; gap: 8px; overflow: hidden; background: #263d32; }
+.scene-title { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.scene-title > div { min-width: 0; }
+.scene-title small { display: block; margin-bottom: 1px; color: #acc2aa; font: 900 9px/1 "Trebuchet MS", sans-serif; letter-spacing: .1em; }
+.scene-title h1 { margin: 0; color: #fff0c3; font: 800 clamp(20px,2vw,29px)/1 Georgia, serif; text-shadow: 0 2px 0 rgba(0,0,0,.28); }
+.scene-link { flex: 0 0 auto; min-height: 34px; padding: 6px 10px; border: 1px solid rgba(227,190,119,.55); border-radius: 8px; background: rgba(16,34,28,.78); color: #f3dca9; font-weight: 900; cursor: pointer; }
+
+.action-console {
+  position: relative;
+  z-index: 30;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0,1fr);
+  overflow: hidden;
+  border-left: 4px solid #6a472e;
+  background:
+    linear-gradient(rgba(255,248,226,.94),rgba(232,209,170,.96)),
+    url('assets/building/parquet_1.png');
+  background-size: auto, 160px;
+  color: #442f22;
+  box-shadow: -12px 0 28px rgba(5,13,10,.32);
+}
+.console-heading { min-height: 66px; padding: 11px 13px 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid rgba(104,69,44,.22); }
+.console-heading small { color: #557564; font: 900 9px/1 "Trebuchet MS",sans-serif; letter-spacing: .12em; }
+.console-heading h2 { margin: 3px 0 0; color: #3b281e; font: 800 20px/1.05 Georgia,serif; }
+.console-tabs { padding: 7px; display: flex; gap: 5px; overflow-x: auto; border-bottom: 2px solid #b68b58; background: rgba(212,182,132,.36); scrollbar-width: none; }
+.console-tabs::-webkit-scrollbar { display: none; }
+.console-tabs button { flex: 1 0 auto; min-height: 34px; padding: 5px 8px; border: 1px solid #a77849; border-radius: 7px; background: #f2dfb9; color: #66472f; font-size: 10px; font-weight: 900; cursor: pointer; }
+.console-tabs button.active { border-color: #274f40; background: linear-gradient(#4f7964,#355b4c); color: #fff0c1; box-shadow: inset 0 0 0 1px rgba(255,239,188,.2); }
+.console-body { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-color: #8a6848 transparent; }
+.console-body.always { padding: 12px; }
+.console-view { display: none; min-height: 100%; padding: 10px; }
+.console-view.active { display: block; }
+.console-subhead { margin-bottom: 9px; display: flex; justify-content: space-between; align-items: center; gap: 7px; }
+.console-intro { margin: 0 0 10px; color: #6f513b; }
+.legacy-kitchen,.legacy-zones { display: none !important; }
+
+.workshop-canvas { grid-template-rows: auto auto minmax(0,1fr) auto; background: radial-gradient(circle at 50% 45%, #465c49 0, #263d32 62%, #172a23 100%); }
+.v5-shell .atelier-next-goal { min-height: 54px; margin: 0; padding: 7px 10px; grid-template-columns: auto 1fr auto; gap: 8px; border: 1px solid #9c7545; border-radius: 9px; background: linear-gradient(90deg,rgba(254,231,179,.96),rgba(219,184,123,.96)); box-shadow: 0 4px 10px rgba(0,0,0,.18); }
+.v5-shell .atelier-next-goal .atelier-goal-compass { font-size: 22px; }
+.v5-shell .atelier-next-goal b { font-size: 14px; }
+.v5-shell .atelier-next-goal p { margin: 1px 0 0; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v5-shell .machine-room-world.v5-machine-room { width: 100%; height: 100%; min-height: 0; margin: 0; aspect-ratio: auto; overflow: hidden; border: 3px solid #7f5834; border-radius: 13px; background-color: #a17c52; background-image: linear-gradient(rgba(28,25,20,.06),rgba(23,35,29,.17)),url('assets/regions/tavern_interior.png'); background-size: 100% 100%; background-position: center; box-shadow: 0 8px 22px rgba(0,0,0,.32); }
+.v5-machine-room .atelier-wall { inset: 0; width: 100%; height: 100%; border: 0; background: transparent; pointer-events: none; }
+.v5-machine-room .atelier-wall span { top: 4%; font-size: 10px; opacity: .86; }
+.v5-machine-room .machine-room-help { bottom: 5px; width: min(84%,570px); padding: 4px 8px; background: rgba(20,39,32,.9); border-color: #9d7a49; color: #f2dca9; }
+.v5-machine-room .machine-slot { width: 16%; min-height: 20%; }
+.v5-machine-room .machine-body { min-height: 92px; }
+.v5-machine-room .machine-body .machine-sprite { width: clamp(54px,7vw,88px); height: clamp(52px,6vw,82px); }
+.v5-machine-room .machine-room-player img { width: clamp(42px,5vw,58px); height: clamp(58px,7vw,80px); }
+.v5-shell .domain-summary { min-height: 0; max-height: 84px; overflow: hidden; }
+.v5-shell .domain-overview { display: none; }
+.v5-shell .domain-resources { padding: 6px; display: flex; flex-wrap: nowrap; gap: 5px; overflow-x: auto; border: 1px solid rgba(205,170,105,.36); border-radius: 8px; background: rgba(13,31,25,.66); scrollbar-width: thin; }
+.v5-shell .domain-resources .resource-chip { flex: 0 0 auto; background: rgba(248,229,188,.92); }
+
+.workshop-console .craft-grid,.workshop-console .staff-grid,.workshop-console .tech-tree { grid-template-columns: 1fr; gap: 9px; }
+.workshop-console .craft-card,.workshop-console .tech-card { min-height: 0; padding: 10px; gap: 6px; border-radius: 9px; box-shadow: 0 3px 0 rgba(76,48,28,.14); }
+.workshop-console .craft-card-art .pixel-card-icon { width: 52px; height: 52px; }
+.workshop-console .craft-card h3 { font-size: 16px; }
+.workshop-console .craft-card p,.workshop-console .craft-card small { font-size: 10px; }
+.workshop-console .production-queue { min-height: 46px; margin-bottom: 8px; padding: 6px; border-radius: 8px; }
+.workshop-console .production-job { min-width: 0; padding: 5px; }
+.workshop-console .filter-row { position: sticky; top: -10px; z-index: 4; margin: 0 -2px 8px; padding: 5px 2px; flex-wrap: nowrap; background: rgba(239,220,185,.96); }
+
+.service-canvas { grid-template-rows: auto auto minmax(0,1fr); background: radial-gradient(circle at 50% 30%,#4a5f4a,#20352d 72%); }
+.service-canvas > .world-event-banner { position: absolute; z-index: 24; top: 124px; left: 22px; right: 22px; margin: 0; box-shadow: 0 5px 16px rgba(31,20,13,.28); }
+.v5-goal { min-height: 43px; margin: 0; padding: 5px 9px; grid-template-columns: minmax(0,1fr) 130px auto; border-radius: 8px; }
+.v5-goal small { font-size: 8px; }
+.v5-goal strong { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v5-room-card { min-height: 0; height: 100%; margin: 0; display: grid; grid-template-rows: auto minmax(0,1fr) auto; overflow: hidden; border-radius: 12px; }
+.v5-room-card .tavern-toolbar { min-height: 38px; padding: 4px 8px; }
+.restaurant-world.v5-service-room { width: 100%; height: 100%; min-height: 0; max-height: none; aspect-ratio: auto; overflow: hidden; background: #b8905f; }
+.restaurant-world.v5-service-room .room-art { width: 100%; height: 100%; object-fit: fill; }
+.v5-room-card .world-footer { min-height: 38px; padding: 4px 8px; }
+.v5-room-card .world-footer .primary-button { min-height: 30px; }
+.service-console .customer-queue { display: grid; gap: 7px; }
+.service-console .customer-card { min-height: 0; padding: 8px; }
+.service-console .counter-recipe-grid { grid-template-columns: 1fr; gap: 7px; }
+.service-console .counter-recipe-button { min-height: 62px; }
+.service-console .ready-tray { display: grid; gap: 7px; }
+.service-console .tray-chip { min-height: 56px; }
+
+.farm-canvas { grid-template-rows: auto minmax(0,1fr); background: linear-gradient(#304c3e,#1b322a); }
+.farm-world.v5-farm-world { width: 100%; height: 100%; min-height: 0; max-height: none; margin: 0; aspect-ratio: auto; overflow: hidden; border: 3px solid #7d5835; border-radius: 13px; box-shadow: 0 8px 22px rgba(0,0,0,.3); }
+.farm-world.v5-farm-world .farm-scene { width: 100%; height: 100%; object-fit: cover; }
+.farm-console .farm-seeds { margin-bottom: 8px; }
+.farm-console .farm-seed-shop,.farm-console .system-panel { margin: 0 0 10px; border-width: 2px; border-radius: 9px; }
+
+.gathering-canvas { grid-template-rows: auto minmax(0,1fr); background: linear-gradient(rgba(19,42,33,.18),rgba(11,28,23,.5)),url('assets/regions/forest.png') center/cover; }
+.v5-shell .gathering-hub { position: relative; min-height: 0; height: 100%; padding: 0; display: block; border: 2px solid rgba(242,214,157,.45); border-radius: 13px; background: radial-gradient(circle at 50% 45%,rgba(215,193,130,.08),rgba(7,24,18,.42)); backdrop-filter: blur(1px); }
+.v5-shell .gathering-card { position: absolute; width: 38%; height: 34%; min-height: 0; padding: 10px; display: flex; align-items: center; gap: 12px; overflow: hidden; border: 2px solid rgba(241,205,132,.82); border-radius: 48% 52% 45% 55% / 54% 44% 56% 46%; background: radial-gradient(circle at 35% 25%,rgba(100,137,94,.92),rgba(23,56,43,.96) 68%); color: #fff0c2; box-shadow: inset 0 0 0 4px rgba(255,235,177,.07),0 8px 0 rgba(16,35,27,.74),0 16px 26px rgba(0,0,0,.3); transform: translateY(0); transition: transform .14s ease,filter .14s ease; }
+.v5-shell .gathering-card:nth-child(1) { left: 8%; top: 9%; transform: rotate(-2deg); }
+.v5-shell .gathering-card:nth-child(2) { right: 8%; top: 12%; transform: rotate(2deg); }
+.v5-shell .gathering-card:nth-child(3) { left: 11%; bottom: 9%; transform: rotate(1deg); }
+.v5-shell .gathering-card:nth-child(4) { right: 7%; bottom: 8%; transform: rotate(-2deg); }
+.v5-shell .gathering-card:hover { transform: translateY(-3px); filter: brightness(1.05); }
+.v5-shell .gathering-card .gathering-icon { width: clamp(52px,7vw,86px); height: clamp(52px,7vw,86px); object-fit: contain; }
+.v5-shell .gathering-card span { min-width: 0; flex: 1; display: grid; text-align: left; }
+.v5-shell .gathering-card small { color: #b7d1b7; font-weight: 900; }
+.v5-shell .gathering-card b { font: 800 clamp(14px,1.5vw,20px)/1.05 Georgia,serif; }
+.v5-shell .gathering-card em { margin-top: 4px; color: #d0dfc9; font-size: 10px; font-style: normal; }
+.v5-shell .gathering-card strong { padding: 6px 8px; border: 1px solid #dfb861; border-radius: 999px; background: #f0d18d; color: #3c2b20; font-size: 10px; }
+.v5-shell .gathering-stage { min-height: 0; height: 100%; overflow: auto; padding: 8px; border: 2px solid #a77d49; border-radius: 13px; background: rgba(244,224,184,.96); color: #422e21; }
+.gathering-guide h3 { margin-top: 0; font-family: Georgia,serif; }
+.gathering-guide p { line-height: 1.55; color: #6a4e37; }
+.loop-card { margin-top: 18px; padding: 10px; display: flex; align-items: center; justify-content: space-between; gap: 5px; border: 2px solid #8e6742; border-radius: 9px; background: #e6c991; font-size: 9px; font-weight: 900; }
+.gathering-console .mini-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.gathering-console .board-wrap { margin: 8px auto; }
+.gathering-console .mini-board { width: min(100%,360px); padding: 6px; gap: 3px; }
+.gathering-console .mini-cell { min-width: 0; aspect-ratio: 1; border-radius: 7px; }
+.gathering-console .ingredient-market { grid-template-columns: 1fr; }
+
+.journal-panel.active { grid-template-columns: clamp(220px,22vw,310px) minmax(0,1fr) !important; background: #e5cfa7; color: #452f21; }
+.journal-sidebar { min-height: 0; padding: 20px 14px; overflow: auto; border-right: 4px solid #69472f; background: linear-gradient(180deg,#284b3e,#172f27); box-shadow: 8px 0 24px rgba(37,24,15,.18); }
+.journal-sidebar > small { color: #9fc1aa; font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.journal-sidebar h1 { margin: 5px 0 8px; color: #fff0c3; font: 800 27px/1.05 Georgia,serif; }
+.journal-sidebar > p { color: #b9ccbd; font-size: 11px; line-height: 1.45; }
+.journal-sidebar .journal-shortcuts { display: grid; gap: 7px; margin-top: 20px; }
+.journal-sidebar .journal-shortcuts button { min-height: 58px; padding: 7px 9px; display: flex; align-items: center; gap: 9px; border: 1px solid rgba(229,196,129,.28); border-radius: 9px; background: rgba(70,102,85,.36); color: #e8d8b2; text-align: left; cursor: pointer; }
+.journal-sidebar .journal-shortcuts button.active { border-color: #dbad58; background: #426c58; color: #fff3c7; }
+.journal-sidebar .journal-shortcuts span { display: grid; }
+.journal-sidebar .journal-shortcuts small { color: #aac0ae; font-size: 9px; }
+.journal-content { min-width: 0; min-height: 0; overflow: hidden; background: linear-gradient(rgba(255,248,226,.92),rgba(225,200,157,.94)),url('assets/building/parquet_1.png'); background-size: auto,180px; }
+.journal-view { display: none; height: 100%; min-height: 0; padding: 18px; overflow: auto; }
+.journal-view.active { display: block; }
+.journal-heading { position: sticky; top: -18px; z-index: 8; margin: -18px -18px 14px; padding: 16px 18px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 2px solid #9b7046; background: rgba(246,229,194,.96); backdrop-filter: blur(8px); }
+.journal-heading h2 { margin: 0; font: 800 24px/1 Georgia,serif; }
+.journal-view .card-grid { grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); }
+
+@media (max-width: 850px) {
+  .v5-shell { --hud: 54px; --world-nav: 56px; }
+  .v5-topbar { padding: 5px 8px; }
+  .v5-topbar .brand-logo { width: 34px; height: 34px; }
+  .v5-topbar .brand-copy strong { max-width: 155px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; }
+  .v5-topbar .brand-copy small { font-size: 8px; }
+  .v5-topbar .currency { min-width: 55px; min-height: 34px; padding: 4px 6px; font-size: 11px; }
+  .world-nav { padding: 4px 5px; gap: 4px; grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .world-nav .nav-button { height: 47px; padding: 2px 4px; justify-content: center; gap: 3px; }
+  .world-nav .nav-button img { width: 29px; height: 29px; }
+  .world-nav .nav-button span { text-align: center; }
+  .world-nav .nav-button small { display: none; }
+  .world-nav .nav-button b { font-size: 10px; }
+  .v5-shell .scene-panel.active { grid-template-columns: 1fr; grid-template-rows: minmax(250px,45%) minmax(0,55%); }
+  .scene-canvas { padding: 6px; gap: 5px; }
+  .scene-title small { font-size: 7px; }
+  .scene-title h1 { font-size: 17px; }
+  .scene-link { min-height: 28px; max-width: 155px; padding: 4px 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 9px; }
+  .action-console { border: 0; border-top: 4px solid #69472f; box-shadow: 0 -10px 24px rgba(5,13,10,.32); }
+  .console-heading { min-height: 45px; padding: 6px 9px 4px; }
+  .console-heading small { font-size: 7px; }
+  .console-heading h2 { margin-top: 1px; font-size: 16px; }
+  .console-tabs { padding: 4px; }
+  .console-tabs button { min-height: 30px; padding: 3px 6px; font-size: 9px; }
+  .console-view { padding: 7px; }
+
+  .workshop-canvas { grid-template-rows: auto auto minmax(0,1fr); }
+  .v5-shell .atelier-next-goal { min-height: 42px; padding: 4px 6px; grid-template-columns: auto 1fr; }
+  .v5-shell .atelier-next-goal .atelier-goal-compass { font-size: 17px; }
+  .v5-shell .atelier-next-goal b { font-size: 11px; }
+  .v5-shell .atelier-next-goal p,.v5-shell .atelier-next-goal > .badge,.v5-shell .domain-summary { display: none; }
+  .v5-machine-room .atelier-wall span,.v5-machine-room .machine-room-help { display: none; }
+  .v5-machine-room .machine-slot { width: 23%; min-height: 18%; }
+  .v5-machine-room .machine-body { min-height: 66px; }
+  .v5-machine-room .machine-body .machine-sprite { width: 50px; height: 48px; }
+  .v5-machine-room .machine-body b { font-size: 8px; }
+  .v5-machine-room .machine-body small { display: none; }
+  .v5-machine-room .machine-progress { height: 5px; }
+  .v5-machine-room .machine-ready-pickup { transform: scale(.7); transform-origin: center; }
+
+  .service-canvas { grid-template-rows: auto auto minmax(0,1fr); }
+  .service-canvas > .world-event-banner { top: 78px; left: 12px; right: 12px; padding: 5px 8px; }
+  .v5-goal { min-height: 34px; padding: 3px 6px; grid-template-columns: minmax(0,1fr) 80px auto; }
+  .v5-goal small { display: none; }
+  .v5-goal .small-button { min-height: 27px; padding: 2px 5px; }
+  .v5-room-card .tavern-toolbar { display: none; }
+  .v5-room-card .world-footer { min-height: 28px; font-size: 8px; }
+  .v5-room-card .world-footer .primary-button { display: none; }
+  .v5-room-card { grid-template-rows: minmax(0,1fr) auto; }
+  .v5-shell .customer-avatar.seated .customer-order { font-size: 7px !important; }
+
+  .farm-canvas,.gathering-canvas { grid-template-rows: auto minmax(0,1fr); }
+  .farm-world.v5-farm-world .farm-plot { transform: translate(-50%,-50%) scale(.78); }
+  .v5-shell .gathering-hub { padding: 0; }
+  .v5-shell .gathering-card { width: 41%; height: 36%; padding: 5px; gap: 5px; border-width: 1px; box-shadow: 0 4px 0 rgba(16,35,27,.72); }
+  .v5-shell .gathering-card:nth-child(1) { left: 5%; top: 7%; }
+  .v5-shell .gathering-card:nth-child(2) { right: 5%; top: 9%; }
+  .v5-shell .gathering-card:nth-child(3) { left: 7%; bottom: 7%; }
+  .v5-shell .gathering-card:nth-child(4) { right: 4%; bottom: 6%; }
+  .v5-shell .gathering-card .gathering-icon { width: 39px; height: 39px; }
+  .v5-shell .gathering-card b { font-size: 11px; }
+  .v5-shell .gathering-card em { display: none; }
+  .v5-shell .gathering-card strong { padding: 3px 4px; font-size: 8px; }
+
+  .journal-panel.active { grid-template-columns: 1fr !important; grid-template-rows: auto minmax(0,1fr) !important; }
+  .journal-sidebar { padding: 7px; overflow: hidden; border: 0; border-bottom: 3px solid #69472f; }
+  .journal-sidebar > small,.journal-sidebar > p { display: none; }
+  .journal-sidebar h1 { margin: 0 0 6px; font-size: 16px; }
+  .journal-sidebar .journal-shortcuts { margin: 0; display: flex; gap: 4px; overflow-x: auto; }
+  .journal-sidebar .journal-shortcuts button { flex: 0 0 auto; min-height: 34px; padding: 3px 6px; gap: 3px; }
+  .journal-sidebar .journal-shortcuts button > span { display: block; }
+  .journal-sidebar .journal-shortcuts b { font-size: 9px; }
+  .journal-sidebar .journal-shortcuts small { display: none; }
+  .journal-view { padding: 9px; }
+  .journal-heading { top: -9px; margin: -9px -9px 8px; padding: 9px; }
+  .journal-heading h2 { font-size: 18px; }
+  .journal-view .card-grid,.journal-view .settings-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 430px) {
+  .v5-topbar .brand-copy strong { max-width: 118px; font-size: 12px; }
+  .v5-topbar .brand-copy small { display: none; }
+  .v5-topbar .currency { min-width: 48px; }
+  .v5-shell .scene-panel.active { grid-template-rows: minmax(235px,43%) minmax(0,57%); }
+  .v5-goal { grid-template-columns: 1fr auto; }
+  .v5-goal .mini-progress { display: none; }
+  .v5-machine-room .machine-slot { width: 25%; }
+  .workshop-console .craft-card .cost-row { gap: 3px; }
+  .workshop-console .craft-card .resource-chip { padding: 2px 4px; font-size: 8px; }
+}
+
 /* V3.1 — collecte jouable, marché et proportions de la salle */
 .tray-upgrade-shortcut { margin:8px 0; width:100%; }
 .gathering-hub { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:22px; }
