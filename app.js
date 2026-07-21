@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const GAME_VERSION = '3.1.0';
-  const SAVE_VERSION = 4;
+  const GAME_VERSION = '4.0.0';
+  const SAVE_VERSION = 5;
   const SAVE_KEY = 'comptoir_des_mondes_save';
   const CHEST_DELAY = 12 * 60 * 60 * 1000;
 
@@ -258,12 +258,12 @@
   ];
   const SERVICE_SEAT_SLOTS = [
     { id: 'seat-1', tableIndex: 0, x: .28, y: .63, orientation: 'back_right' },
-    { id: 'seat-2', tableIndex: 0, x: .44, y: .75, orientation: 'front_left' },
     { id: 'seat-3', tableIndex: 1, x: .55, y: .63, orientation: 'back_right' },
-    { id: 'seat-4', tableIndex: 1, x: .71, y: .75, orientation: 'front_left' },
     { id: 'seat-5', tableIndex: 2, x: .37, y: .48, orientation: 'back_right' },
-    { id: 'seat-6', tableIndex: 2, x: .53, y: .60, orientation: 'front_left' },
     { id: 'seat-7', tableIndex: 3, x: .64, y: .48, orientation: 'back_right' },
+    { id: 'seat-2', tableIndex: 0, x: .44, y: .75, orientation: 'front_left' },
+    { id: 'seat-4', tableIndex: 1, x: .71, y: .75, orientation: 'front_left' },
+    { id: 'seat-6', tableIndex: 2, x: .53, y: .60, orientation: 'front_left' },
     { id: 'seat-8', tableIndex: 3, x: .80, y: .60, orientation: 'front_left' }
   ];
   const SERVICE_DECOR_SLOTS = [
@@ -337,6 +337,7 @@
   let lastSecondTick = 0;
   let automationTimers = { delivery: Date.now(), wood: Date.now(), helper: Date.now(), kitchen: Date.now() };
   let mini = null;
+  let miniTool = '';
   let layoutEditing = false;
   let selectedFurnitureId = null;
   let selectedFurnitureRotation = 0;
@@ -488,16 +489,14 @@
   function showTutorial(force = false) {
     if (!force && state.tutorialSeen) return;
     const html = `
-      <p>Le Comptoir est maintenant un domaine complet : collecte active, fabrication, cuisine, ferme et service se répondent.</p>
+      <p>Le Comptoir est désormais organisé autour d’une vraie boucle : jouer pour collecter, fabriquer pour progresser, puis utiliser et vendre tes créations.</p>
       <div class="tutorial-steps">
-        <div class="tutorial-step"><div class="tutorial-num">1</div><div><b>Ferme la taverne pour préparer</b><small>Le bouton au-dessus de la salle permet d'ouvrir ou fermer la taverne. Fermée, aucun client n'arrive et rien ne presse.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Prépare ton stock</b><small>Utilise la cuisine ouverte sur la salle : les commandes restent visibles pendant la préparation.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">3</div><div><b>Ouvre quand tu es prête</b><small>Quand plusieurs plats sont prêts, ouvre la taverne. Les clients arrivent et demandent une recette précise.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">4</div><div><b>Déplace-toi et sers</b><small>Touche le sol pour déplacer ton personnage, puis touche un client pour lui apporter le plat correspondant.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Collecte en jouant</b><small>Le bois, la pierre, le minerai et le tissu viennent de mini-jeux qui gagnent en rendement avec ta maîtrise.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">6</div><div><b>Développe le domaine</b><small>La cour mène à la menuiserie, à la production, aux machines et aux technologies. Chaque meuble fabriqué rejoint l’agencement.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">7</div><div><b>Recrute sans perdre le contrôle</b><small>Les employés et robots automatisent seulement les tâches que tu choisis de leur confier.</small></div></div>
-        <div class="tutorial-step"><div class="tutorial-num">8</div><div><b>Choisis ton prochain déblocage</b><small>Construis une machine, découvre une recette, améliore le stockage ou complète une collection, toujours sans remise à zéro.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">1</div><div><b>Collecte tes matières</b><small>Dans Collecte, coupe du bois, fouille la pierre, détecte le métal et gagne du tissu au mini-jeu. Ta maîtrise augmente le rendement.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">2</div><div><b>Construis ton atelier</b><small>Transforme les ressources en planches, clous et engrenages, puis fabrique les machines qui dévoilent de nouvelles branches.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">3</div><div><b>Vois le domaine évoluer</b><small>Une machine ou un meuble n’apparaît dans une salle qu’une fois réellement fabriqué. Aucun emplacement vide ne pollue le décor.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">4</div><div><b>Cuisine dans la salle</b><small>Prépare les plats sans quitter les commandes des yeux, puis sers n’importe quel plat présent dans ton stock.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">5</div><div><b>Fais vivre ton équipe</b><small>Les employés recrutés apparaissent dans leur pièce et montrent ce qu’ils font. Tu peux activer ou désactiver leur automatisation.</small></div></div>
+        <div class="tutorial-step"><div class="tutorial-num">6</div><div><b>Suis toujours un objectif</b><small>Le bandeau de l’atelier indique la prochaine construction utile : les étoiles ne bloquent plus seules la progression.</small></div></div>
       </div>`;
     showModal('Bienvenue au Comptoir', html, [
       { label: 'J’ai compris', className: 'primary-button', action: () => { state.tutorialSeen = true; saveState(); } }
@@ -617,12 +616,22 @@
   }
 
   function switchTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('[data-tab-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel === tab));
-    document.querySelectorAll('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === tab));
+    const routes = {
+      kitchen: 'counter', carpentry: 'workshop', industry: 'workshop', technology: 'workshop', staff: 'workshop',
+      upgrades: 'journal', collections: 'journal', objectives: 'journal', settings: 'journal', progress: 'journal', minigame: 'zones'
+    };
+    const destination = routes[tab] || tab;
+    currentTab = destination;
+    document.querySelectorAll('[data-tab-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.tabPanel === destination));
+    document.querySelectorAll('[data-tab]').forEach(button => button.classList.toggle('active', button.dataset.tab === destination));
     window.scrollTo({ top: 0, behavior: state.settings.reducedMotion ? 'auto' : 'smooth' });
     if (tab === 'minigame' && !mini) initMiniLevel();
     renderAll();
+    if (routes[tab]) {
+      const section = document.querySelector(`[data-section="${tab}"]`);
+      if (section?.tagName === 'DETAILS') section.open = true;
+      setTimeout(() => section?.scrollIntoView({ behavior: state.settings.reducedMotion ? 'auto' : 'smooth', block: 'start' }), 80);
+    }
   }
 
   function renderHUD() {
@@ -925,7 +934,7 @@
       const node = document.createElement('button');
       node.type = 'button';
       const seated = customer.status === 'seated';
-      node.className = `customer-avatar ${seated ? 'seated' : 'walking'} ${customer.status === 'leaving' ? 'leaving' : ''}`;
+      node.className = `customer-avatar ${seated ? 'seated' : 'walking'} ${customer.status === 'leaving' ? 'leaving' : ''} ${slot.orientation || ''}`;
       node.style.left = `${position.x * 100}%`;
       node.style.top = `${position.y * 100}%`;
       node.dataset.customerId = customer.id;
@@ -1298,6 +1307,18 @@
     { x: .28, y: .67 }, { x: .50, y: .67 }, { x: .72, y: .67 }
   ];
 
+  function farmPlotPosition(index) {
+    if (window.innerWidth <= 520) {
+      return [
+        { x: .28, y: .22 }, { x: .72, y: .22 },
+        { x: .28, y: .42 }, { x: .72, y: .42 },
+        { x: .28, y: .62 }, { x: .72, y: .62 },
+        { x: .28, y: .82 }, { x: .72, y: .82 }
+      ][index];
+    }
+    return FARM_PLOT_POSITIONS[index];
+  }
+
   function getFarmCapacity() {
     return Math.min(8, 4 + (hasUpgrade(state, 'farm_plot_5') ? 1 : 0) + (hasUpgrade(state, 'farm_plot_6') ? 1 : 0) + Number(state.expansion?.farmExtraPlots || 0));
   }
@@ -1320,7 +1341,7 @@
   }
 
   function visitFarmPlot(index) {
-    const position = FARM_PLOT_POSITIONS[index];
+    const position = farmPlotPosition(index);
     if (!position) return;
     state.farm.player = { x: position.x, y: Math.min(.86, position.y + .16) };
     const info = farmPlotState(state.farm.plots[index]);
@@ -1355,7 +1376,7 @@
     player.style.top = `${state.farm.player.y * 100}%`;
     grid.innerHTML = state.farm.plots.slice(0, capacity).map((plot, index) => {
       const info = farmPlotState(plot);
-      const position = FARM_PLOT_POSITIONS[index];
+      const position = farmPlotPosition(index);
       if (info.status === 'empty') return `<button class="farm-plot empty" style="left:${position.x * 100}%;top:${position.y * 100}%" data-visit-plot="${index}" type="button"><b>Parcelle ${index + 1}</b><small>Terre disponible</small></button>`;
       if (info.status === 'growing') return `<button class="farm-plot growing" style="left:${position.x * 100}%;top:${position.y * 100}%" data-visit-plot="${index}" type="button"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>${info.crop.name}</b><small>${Math.ceil(info.remaining / 1000)} s</small></button>`;
       return `<button class="farm-plot ready" style="left:${position.x * 100}%;top:${position.y * 100}%" data-visit-plot="${index}" type="button"><img src="${assetPath(info.crop.asset)}" alt="${info.crop.name}"><b>Récolter</b></button>`;
@@ -1404,15 +1425,14 @@
     const grid = el('upgradeGrid');
     grid.innerHTML = UPGRADES.filter(u => upgradeFilter === 'all' || u.category === upgradeFilter).map(upgrade => {
       const bought = hasUpgrade(state, upgrade.id);
-      const available = state.reputation >= upgrade.repNeed && (!upgrade.requires || hasUpgrade(state, upgrade.requires)) && (!upgrade.zone || state.unlockedZones.includes(upgrade.zone));
+      const available = (!upgrade.requires || hasUpgrade(state, upgrade.requires)) && (!upgrade.zone || state.unlockedZones.includes(upgrade.zone));
       const materialCosts = upgrade.materials || {};
       const discount = hasCollection('crystals') ? 0.95 : 1;
       const finalCoins = Math.ceil(upgrade.coins * discount);
       const canBuy = available && !bought && canPay(upgrade.coins, materialCosts);
       let lockText = '';
       if (!available) {
-        if (state.reputation < upgrade.repNeed) lockText = `${upgrade.repNeed} réputation requise`;
-        else if (upgrade.requires) lockText = `Nécessite ${getUpgrade(upgrade.requires)?.name}`;
+        if (upgrade.requires) lockText = `Nécessite ${getUpgrade(upgrade.requires)?.name}`;
         else if (upgrade.zone) lockText = `Nécessite ${getZone(upgrade.zone)?.name}`;
       }
       return `<article class="game-card ${available || bought ? '' : 'locked'}">
@@ -1428,7 +1448,7 @@
   function buyUpgrade(upgradeId) {
     const upgrade = getUpgrade(upgradeId);
     if (!upgrade || hasUpgrade(state, upgradeId)) return;
-    if (state.reputation < upgrade.repNeed || (upgrade.requires && !hasUpgrade(state, upgrade.requires)) || (upgrade.zone && !state.unlockedZones.includes(upgrade.zone))) return;
+    if ((upgrade.requires && !hasUpgrade(state, upgrade.requires)) || (upgrade.zone && !state.unlockedZones.includes(upgrade.zone))) return;
     if (!canPay(upgrade.coins, upgrade.materials)) return toast('Il manque des ressources.');
     pay(upgrade.coins, upgrade.materials);
     state.upgrades.push(upgradeId);
@@ -1708,7 +1728,8 @@
       reward: 110 + l * 38,
       won: false,
       lost: false,
-      shuffles: 1
+      shuffles: 2,
+      boosters: { hammer: 3, bomb: 2 }
     };
   }
 
@@ -1747,7 +1768,14 @@
     if (mini.objectiveType === 'colors') details.push(`<span class="objective-detail">${pixelImg(miniTile(mini.colorId).asset, mini.colorId, 'pixel-small')} ${remaining.colors}</span>`);
     el('miniObjectiveDetails').innerHTML = details.join('');
     el('shuffleMini').disabled = mini.shuffles <= 0 || mini.won || mini.lost;
-    el('shuffleMini').textContent = `Mélanger (${mini.shuffles})`;
+    el('shuffleMini').innerHTML = `🔀 Mélanger <small>${mini.shuffles}</small>`;
+    el('miniBoosters')?.querySelectorAll('[data-mini-tool]').forEach(button => {
+      const tool = button.dataset.miniTool;
+      button.classList.toggle('active', miniTool === tool);
+      button.disabled = (mini.boosters?.[tool] || 0) <= 0 || mini.won || mini.lost;
+      const count = button.querySelector('small');
+      if (count) count.textContent = mini.boosters?.[tool] || 0;
+    });
 
     const board = el('miniBoard');
     board.innerHTML = '';
@@ -1760,9 +1788,38 @@
       button.setAttribute('role', 'gridcell');
       button.setAttribute('aria-label', cell.crate ? `Caisse, résistance ${cell.crate}` : `${miniTile(cell.tile).id}${cell.bubble ? ', bulle' : ''}`);
       button.innerHTML = cell.crate ? pixelImg('crate', 'Caisse', 'pixel-card-icon') : pixelImg(miniTile(cell.tile).asset, miniTile(cell.tile).id, 'pixel-card-icon');
-      if (!cell.crate && !mini.won && !mini.lost) button.addEventListener('click', () => miniClick(index));
+      if (!mini.won && !mini.lost) button.addEventListener('click', () => miniTool ? useMiniTool(index) : miniClick(index));
       board.appendChild(button);
     });
+  }
+
+  function useMiniTool(index) {
+    if (!mini || !miniTool || (mini.boosters?.[miniTool] || 0) <= 0 || mini.won || mini.lost) return;
+    const affected = new Set();
+    if (miniTool === 'hammer') affected.add(index);
+    if (miniTool === 'bomb') {
+      const row = Math.floor(index / 7), col = index % 7;
+      for (let r = row - 1; r <= row + 1; r++) for (let c = col - 1; c <= col + 1; c++) if (r >= 0 && r < 7 && c >= 0 && c < 7) affected.add(r * 7 + c);
+    }
+    const removed = new Set();
+    affected.forEach(i => {
+      const cell = mini.board[i];
+      if (!cell) return;
+      if (cell.crate > 0) cell.crate = Math.max(0, cell.crate - (miniTool === 'bomb' ? 2 : 1));
+      else {
+        if (cell.bubble) cell.bubble = false;
+        if (mini.objectiveType === 'colors' && cell.tile === mini.colorId) mini.colorsRemoved += 1;
+        removed.add(i);
+      }
+    });
+    mini.boosters[miniTool] -= 1;
+    mini.score += affected.size * (miniTool === 'bomb' ? 45 : 25);
+    if (removed.size) collapseMiniBoard(removed);
+    el('miniMessage').textContent = miniTool === 'bomb' ? 'Bombe activée !' : 'Marteau utilisé !';
+    miniTool = '';
+    vibrate([20, 25, 30]);
+    checkMiniEnd();
+    renderMini();
   }
 
   function connectedGroup(startIndex) {
@@ -1998,6 +2055,7 @@
   function attachEvents() {
     document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.tab)));
     document.querySelectorAll('[data-open-tab]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.openTab)));
+    document.querySelectorAll('[data-open-section]').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.openSection)));
     el('goalShortcut').addEventListener('click', () => switchTab('objectives'));
     el('contextAction').addEventListener('click', () => switchTab('kitchen'));
     el('toggleRestaurant').addEventListener('click', toggleRestaurant);
@@ -2014,6 +2072,11 @@
       ]);
     });
     el('shuffleMini').addEventListener('click', shuffleMini);
+    el('miniBoosters')?.querySelectorAll('[data-mini-tool]').forEach(button => button.addEventListener('click', () => {
+      miniTool = miniTool === button.dataset.miniTool ? '' : button.dataset.miniTool;
+      renderMini();
+      el('miniMessage').textContent = miniTool ? 'Choisis une case à cibler.' : 'Outil rangé.';
+    }));
     el('claimFreeChest').addEventListener('click', claimChest);
     el('saveNow').addEventListener('click', () => saveState(true));
     el('exportSave').addEventListener('click', exportSave);

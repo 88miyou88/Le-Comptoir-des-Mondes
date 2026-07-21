@@ -1,7 +1,7 @@
 {
   "name": "Le Comptoir des Mondes — L’Atelier vivant",
   "short_name": "Comptoir",
-  "description": "Jeu cosy d’atelier évolutif, fabrication, exploration et restauration en pixel art.",
+  "description": "Jeu cosy d’atelier évolutif, fabrication, collecte et restauration en pixel art.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

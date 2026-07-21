@@ -268,7 +268,7 @@
 
   function expansionDefaults() {
     return {
-      schema: 3,
+      schema: 4,
       crafting: [],
       machines: ['workbench'],
       discoveries: ['plans_base'],
@@ -324,6 +324,22 @@
     if ((state.decorInventory.forge_station || 0) > 0 && !state.expansion.machines.includes('forge')) state.expansion.machines.push('forge');
     if ((state.decorInventory.craft_station || 0) > 0 && !state.expansion.machines.includes('assembler')) state.expansion.machines.push('assembler');
     state.expansion.machines = [...new Set(['workbench', ...state.expansion.machines])];
+    const gathering = state.expansion.gathering;
+    if (gathering.active === 'stone' && !Number.isFinite(gathering.stone?.cells?.[0]?.depth)) {
+      gathering.active = '';
+      gathering.stone = null;
+    }
+    if (gathering.active === 'metal' && !Number.isFinite(gathering.metal?.probes)) {
+      gathering.active = '';
+      gathering.metal = null;
+    }
+    if (gathering.active === 'wood') {
+      gathering.wood.combo = Number(gathering.wood?.combo || 0);
+      gathering.wood.bestCombo = Number(gathering.wood?.bestCombo || 0);
+      gathering.wood.shield = Number(gathering.wood?.shield ?? gathering.wood?.shields ?? 1);
+      gathering.wood.hearts = Number(gathering.wood?.hearts || 3);
+    }
+    state.expansion.schema = 4;
     while (state.farm.plots.length < C.getFarmCapacity()) state.farm.plots.push(null);
     preparedState = state;
     return state.expansion;
@@ -388,6 +404,14 @@
       exp().discoveries.push(`machine:${output.id}`);
       const machine = MACHINE_DEFS[output.id];
       C.toast(`Nouvelle machine installée : ${machine?.name || output.id} !`);
+      const supplierByMachine = { sawmill: 'forest', forge: 'mine', press: 'sea', assembler: 'mountain' };
+      const supplier = supplierByMachine[output.id];
+      if (supplier && !state().unlockedZones.includes(supplier)) {
+        state().unlockedZones.push(supplier);
+        state().stats.zonesUnlocked = state().unlockedZones.length;
+        const place = C.ZONES.find(zone => zone.id === supplier);
+        C.toast(`Nouveau fournisseur relié à l’atelier : ${place?.name || supplier}.`);
+      }
     }
     if (!exp().firstCrafts.includes(recipe.id)) exp().firstCrafts.push(recipe.id);
     exp().stats.crafted += 1;
@@ -526,8 +550,8 @@
     const player = C.el('machineRoomPlayer');
     if (!machine || !player) return collectCraftOutput(jobUid);
     player.classList.add('walking');
-    player.style.left = `${machine.x * 100}%`;
-    player.style.top = `${Math.min(.86, machine.y + .09) * 100}%`;
+    player.style.left = `${Math.max(.12, Math.min(.88, machine.x + (machine.x < .5 ? .09 : -.09))) * 100}%`;
+    player.style.top = `${Math.min(.88, machine.y + .14) * 100}%`;
     const delay = state().settings.reducedMotion ? 30 : 620;
     setTimeout(() => {
       player.classList.remove('walking');
@@ -580,7 +604,7 @@
   function randomBranch() { const roll = Math.random(); return roll < .36 ? 'left' : roll < .72 ? 'right' : 'none'; }
 
   function startWoodGame() {
-    exp().gathering.wood = { score: 0, hearts: 2, target: 18 + gatheringLevel('wood') * 2, side: 'left', branches: Array.from({ length: 10 }, randomBranch), done: false };
+    exp().gathering.wood = { score: 0, combo: 0, bestCombo: 0, hearts: 3, shield: 1, target: 18 + gatheringLevel('wood') * 2, side: 'left', branches: Array.from({ length: 10 }, randomBranch), done: false };
     exp().gathering.active = 'wood'; C.saveState(); renderGathering();
   }
   function finishWoodGame() {
@@ -595,8 +619,12 @@
     if (!game || game.done) return;
     game.side = side;
     if (game.branches[0] === side) {
-      game.hearts -= 1; C.toast('Aïe, une branche !');
-    } else game.score += 1;
+      if (game.shield > 0) { game.shield -= 1; C.toast('Bouclier cassé, mais la série continue !'); }
+      else { game.hearts -= 1; game.combo = 0; C.toast('Aïe, une branche !'); }
+    } else {
+      game.score += 1; game.combo += 1; game.bestCombo = Math.max(game.bestCombo, game.combo);
+      if (game.combo > 0 && game.combo % 8 === 0) { game.shield += 1; C.toast('Série parfaite : +1 bouclier !'); }
+    }
     game.branches.shift(); game.branches.push(randomBranch());
     if (game.hearts <= 0 || game.score >= game.target) return finishWoodGame();
     C.saveState(); renderGathering();
@@ -604,42 +632,73 @@
 
   function startStoneGame() {
     const level = gatheringLevel('stone');
-    const cells = Array.from({ length: 25 }, () => { const roll = Math.random(); return roll < .12 ? 'crystal' : roll < .66 ? String(C.randomInt(1, 2 + Math.floor(level / 3))) : 'empty'; });
-    exp().gathering.stone = { moves: 10 + Math.min(5, level - 1), cells, revealed: [], stone: 0, crystals: 0, done: false };
+    const cells = Array.from({ length: 36 }, () => { const roll = Math.random(); return { depth: C.randomInt(1, Math.min(3, 2 + Math.floor(level / 4))), loot: roll < .1 ? 'crystal' : roll < .68 ? 'stone' : 'empty', amount: C.randomInt(1, 2 + Math.floor(level / 3)), revealed: false }; });
+    exp().gathering.stone = { energy: 20 + Math.min(8, level - 1), tool: 'pick', cells, stone: 0, crystals: 0, artifacts: 0, done: false };
     exp().gathering.active = 'stone'; C.saveState(); renderGathering();
+  }
+  function finishStoneGame() {
+    const game = exp().gathering.stone;
+    if (!game || game.done) return;
+    game.done = true; awardGathering('stone', 'stone', Math.max(1, game.stone));
+    if (game.crystals) state().inventory.crystal = (state().inventory.crystal || 0) + game.crystals;
+    C.saveState(); renderGathering();
   }
   function digStone(index) {
     const game = exp().gathering.stone;
-    if (!game || game.done || game.revealed.includes(index)) return;
-    game.revealed.push(index); game.moves -= 1;
-    const value = game.cells[index];
-    if (value === 'crystal') game.crystals += 1; else if (value !== 'empty') game.stone += Number(value);
-    if (game.moves <= 0) {
-      game.done = true; awardGathering('stone', 'stone', game.stone);
-      if (game.crystals) state().inventory.crystal = (state().inventory.crystal || 0) + game.crystals;
-      C.saveState();
-    }
-    renderGathering();
+    if (!game || game.done || !game.cells[index] || game.cells[index].revealed) return;
+    const tool = game.tool || 'pick';
+    const targets = [];
+    if (tool === 'dynamite') {
+      if (game.energy < 3) return C.toast('Il faut 3 points d’énergie pour la dynamite.');
+      const row = Math.floor(index / 6), col = index % 6;
+      for (let r = row - 1; r <= row + 1; r++) for (let c = col - 1; c <= col + 1; c++) if (r >= 0 && r < 6 && c >= 0 && c < 6) targets.push(r * 6 + c);
+      game.energy -= 3;
+    } else { targets.push(index); game.energy -= 1; }
+    targets.forEach(i => {
+      const cell = game.cells[i]; if (!cell || cell.revealed) return;
+      const damage = tool === 'dynamite' ? 2 : tool === 'brush' ? 1 : 1;
+      cell.depth = Math.max(0, cell.depth - damage);
+      if (cell.depth === 0) {
+        cell.revealed = true;
+        if (cell.loot === 'crystal') game.crystals += 1;
+        if (cell.loot === 'stone') game.stone += cell.amount;
+        if (cell.loot === 'empty' && Math.random() < .12) game.artifacts += 1;
+      }
+    });
+    if (game.energy <= 0 || game.cells.every(cell => cell.revealed)) return finishStoneGame();
+    C.saveState(); renderGathering();
   }
 
+  let detectorRaf = 0;
   function startMetalGame() {
     const count = 3 + Math.min(3, Math.floor(gatheringLevel('ore') / 2));
     const targets = [];
-    while (targets.length < count) { const target = C.randomInt(0, 24); if (!targets.includes(target)) targets.push(target); }
-    exp().gathering.metal = { scans: 10 + Math.min(5, gatheringLevel('ore') - 1), targets, found: [], scanned: {}, ore: 0, done: false };
+    while (targets.length < count) { const target = C.randomInt(8, 92); if (!targets.some(value => Math.abs(value - target) < 12)) targets.push(target); }
+    exp().gathering.metal = { probes: 8 + Math.min(4, gatheringLevel('ore') - 1), targets, found: [], cursor: 0, direction: 1, ore: 0, lastHint: 'Le détecteur commence son balayage…', done: false };
     exp().gathering.active = 'metal'; C.saveState(); renderGathering();
   }
-  function scanMetal(index) {
+  function detectorLoop() {
     const game = exp().gathering.metal;
-    if (!game || game.done || game.scanned[index] !== undefined) return;
-    game.scans -= 1;
+    if (!game || game.done || exp().gathering.active !== 'metal') { detectorRaf = 0; return; }
+    const phase = (Date.now() % 3600) / 3600;
+    game.cursor = phase < .5 ? phase * 200 : (1 - phase) * 200;
+    const needle = C.el('detectorNeedle'); if (needle) needle.style.left = `${game.cursor}%`;
     const live = game.targets.filter(target => !game.found.includes(target));
-    if (live.includes(index)) { game.found.push(index); game.ore += 2 + Math.floor(gatheringLevel('ore') / 3); game.scanned[index] = 0; }
-    else {
-      const row = Math.floor(index / 5), col = index % 5;
-      game.scanned[index] = Math.min(...live.map(target => Math.abs(row - Math.floor(target / 5)) + Math.abs(col - target % 5)));
-    }
-    if (game.scans <= 0 || game.found.length === game.targets.length) { game.done = true; awardGathering('ore', 'ore', game.ore); }
+    const distance = live.length ? Math.min(...live.map(target => Math.abs(target - game.cursor))) : 100;
+    const signal = C.el('detectorSignal'); if (signal) signal.style.width = `${Math.max(4, 100 - distance * 4)}%`;
+    detectorRaf = requestAnimationFrame(detectorLoop);
+  }
+  function probeMetal() {
+    const game = exp().gathering.metal;
+    if (!game || game.done || game.probes <= 0) return;
+    game.probes -= 1;
+    const live = game.targets.filter(target => !game.found.includes(target));
+    const nearest = live.sort((a, b) => Math.abs(a - game.cursor) - Math.abs(b - game.cursor))[0];
+    const distance = Math.abs(nearest - game.cursor);
+    if (distance <= 5) {
+      game.found.push(nearest); game.ore += 3 + Math.floor(gatheringLevel('ore') / 3); game.lastHint = 'Filon trouvé ! Le suivant émet déjà un signal.';
+    } else game.lastHint = distance < 12 ? 'Très chaud — creuse presque au même endroit.' : distance < 25 ? 'Signal moyen — rapproche-toi.' : 'Signal faible — laisse le curseur continuer.';
+    if (game.probes <= 0 || game.found.length === game.targets.length) { game.done = true; awardGathering('ore', 'ore', Math.max(1, game.ore)); }
     C.saveState(); renderGathering();
   }
 
@@ -656,15 +715,15 @@
   function renderWoodStage(game) {
     if (game.done) return `<div class="gather-result"><h3>Coupe terminée</h3><p>${game.score} tronçons coupés. Ta maîtrise augmente le rendement des prochaines parties.</p><button class="primary-button" data-gather-start="wood" type="button">Rejouer</button></div>`;
     const rows = game.branches.slice(0, 8).map((branch, index) => `<div class="timber-row ${branch}" style="bottom:${index * 11}%"><i></i>${branch !== 'none' ? '<span></span>' : ''}</div>`).join('');
-    return `<div class="gather-game-head"><button class="secondary-button" data-close-gather type="button">Retour</button><div><b>Bûcheron · ${game.score}/${game.target}</b><small>${'❤️'.repeat(game.hearts)} · évite les branches</small></div></div><div class="timber-game">${rows}<img class="timber-player ${game.side}" src="${C.assetPath('player_walk')}" alt="Votre personnage"></div><div class="timber-controls"><button data-chop="left" type="button">◀ Gauche</button><button data-chop="right" type="button">Droite ▶</button></div>`;
+    return `<div class="gather-game-head"><button class="secondary-button" data-close-gather type="button">Retour</button><div><b>Bûcheron · ${game.score}/${game.target}</b><small>${'❤️'.repeat(game.hearts)} · série ×${game.combo} · ${game.shield ? `🛡️ ${game.shield}` : 'sans bouclier'}</small></div></div><div class="timber-game combo-${Math.min(3, Math.floor(game.combo / 5))}">${rows}<div class="timber-combo">×${Math.max(1, game.combo)}</div><img class="timber-player ${game.side}" src="${C.assetPath('player_walk')}" alt="Votre personnage"></div><div class="timber-controls"><button data-chop="left" type="button">◀ Couper à gauche</button><button data-chop="right" type="button">Couper à droite ▶</button></div>`;
   }
   function renderStoneStage(game) {
     if (game.done) return `<div class="gather-result"><h3>Fouille terminée</h3><p>${game.stone} pierres et ${game.crystals} cristal(aux) trouvés.</p><button class="primary-button" data-gather-start="stone" type="button">Nouvelle fouille</button></div>`;
-    return `<div class="gather-game-head"><button class="secondary-button" data-close-gather type="button">Retour</button><div><b>Fouille archéologique</b><small>${game.moves} coups · ${game.stone} pierres</small></div></div><div class="dig-grid">${game.cells.map((value, index) => { const revealed = game.revealed.includes(index); const icon = value === 'crystal' ? '💎' : value === 'empty' ? '·' : C.itemImg('stone', 'dig-icon'); return `<button class="dig-cell ${revealed ? 'revealed' : ''}" data-dig="${index}" type="button" ${revealed ? 'disabled' : ''}>${revealed ? icon : '?'}</button>`; }).join('')}</div>`;
+    return `<div class="gather-game-head"><button class="secondary-button" data-close-gather type="button">Retour</button><div><b>Chantier archéologique</b><small>⚡ ${game.energy} · ${game.stone} pierres · 💎 ${game.crystals}</small></div></div><div class="dig-tools"><button data-dig-tool="pick" class="${game.tool === 'pick' ? 'active' : ''}" type="button">⛏️ Pioche<small>1 énergie · 1 couche</small></button><button data-dig-tool="brush" class="${game.tool === 'brush' ? 'active' : ''}" type="button">🖌️ Brosse<small>1 énergie · précision</small></button><button data-dig-tool="dynamite" class="${game.tool === 'dynamite' ? 'active' : ''}" type="button">💥 Dynamite<small>3 énergie · zone 3×3</small></button></div><div class="dig-grid advanced">${game.cells.map((cell, index) => { const icon = cell.loot === 'crystal' ? '💎' : cell.loot === 'stone' ? C.itemImg('stone', 'dig-icon') : game.artifacts && Math.random() < 0 ? '🏺' : '·'; return `<button class="dig-cell depth-${cell.depth} ${cell.revealed ? 'revealed' : ''}" data-dig="${index}" type="button" ${cell.revealed ? 'disabled' : ''}><span>${cell.revealed ? icon : cell.depth === 3 ? '▦' : cell.depth === 2 ? '▤' : '◇'}</span></button>`; }).join('')}</div>`;
   }
   function renderMetalStage(game) {
     if (game.done) return `<div class="gather-result"><h3>Prospection terminée</h3><p>${game.ore} minerais détectés. Ils peuvent maintenant être fondus à la forge.</p><button class="primary-button" data-gather-start="metal" type="button">Repartir</button></div>`;
-    return `<div class="gather-game-head"><button class="secondary-button" data-close-gather type="button">Retour</button><div><b>Détecteur de métal</b><small>${game.scans} scans · ${game.ore} minerais</small></div></div><div class="detector-grid">${Array.from({ length: 25 }, (_, index) => { const signal = game.scanned[index]; const found = signal === 0; const heat = signal === undefined ? '' : signal <= 1 ? 'hot' : signal <= 3 ? 'warm' : 'cold'; return `<button class="detector-cell ${heat} ${found ? 'found' : ''}" data-scan="${index}" type="button" ${signal !== undefined ? 'disabled' : ''}>${found ? C.itemImg('ore', 'dig-icon') : signal === undefined ? '⌁' : `${Math.max(1, 6 - signal)}▮`}</button>`; }).join('')}</div>`;
+    return `<div class="gather-game-head"><button class="secondary-button" data-close-gather type="button">Retour</button><div><b>Prospection au détecteur</b><small>${game.probes} forages · ${game.ore} minerais · ${game.found.length}/${game.targets.length} filons</small></div></div><div class="detector-cave"><div class="detector-track"><div id="detectorSignal" class="detector-signal"></div><div id="detectorNeedle" class="detector-needle"><span>📡</span></div>${game.found.map(target => `<i class="found-vein" style="left:${target}%">${C.itemImg('ore', 'dig-icon')}</i>`).join('')}</div><p>${game.lastHint}</p><button class="detector-probe" data-metal-probe type="button">⛏️ Forer sous le curseur</button></div>`;
   }
 
   function renderGathering() {
@@ -682,9 +741,11 @@
     stage.querySelectorAll('[data-gather-start]').forEach(button => button.addEventListener('click', () => { const game = button.dataset.gatherStart; if (game === 'wood') startWoodGame(); if (game === 'stone') startStoneGame(); if (game === 'metal') startMetalGame(); }));
     stage.querySelector('[data-close-gather]')?.addEventListener('click', () => { exp().gathering.active = ''; C.saveState(); renderGathering(); });
     stage.querySelectorAll('[data-chop]').forEach(button => button.addEventListener('click', () => chopWood(button.dataset.chop)));
+    stage.querySelectorAll('[data-dig-tool]').forEach(button => button.addEventListener('click', () => { exp().gathering.stone.tool = button.dataset.digTool; C.saveState(); renderGathering(); }));
     stage.querySelectorAll('[data-dig]').forEach(button => button.addEventListener('click', () => digStone(Number(button.dataset.dig))));
-    stage.querySelectorAll('[data-scan]').forEach(button => button.addEventListener('click', () => scanMetal(Number(button.dataset.scan))));
+    stage.querySelector('[data-metal-probe]')?.addEventListener('click', probeMetal);
     market.querySelectorAll('[data-market-buy]').forEach(button => button.addEventListener('click', () => buyMarketItem(button.dataset.marketBuy)));
+    if (active === 'metal' && !detectorRaf) detectorLoop();
   }
 
   function toggleMenuRecipe(recipeId) {
@@ -749,7 +810,6 @@
   function hireStaff(id) {
     const definition = STAFF.find(item => item.id === id);
     if (!definition || staffMember(id)) return;
-    if (state().reputation < definition.rep) return C.toast(`${definition.rep} réputation requise.`);
     if (state().coins < definition.cost) return C.toast('Pas assez de pièces.');
     state().coins -= definition.cost;
     exp().staff.push({ id, level: 1, active: true, lastRun: Date.now() });
@@ -780,10 +840,10 @@
     if (!grid) return;
     grid.innerHTML = STAFF.map(definition => {
       const member = staffMember(definition.id);
-      const available = state().reputation >= definition.rep;
+      const available = true;
       return `<article class="staff-card ${available || member ? '' : 'locked'}">
         ${C.pixelImg(definition.asset, definition.name, 'staff-portrait')}<div><span class="badge">${definition.role}</span><h3>${definition.name}</h3><p>${definition.desc}</p>
-        ${member ? `<div class="staff-actions"><button class="secondary-button toggle-staff" data-staff="${definition.id}" type="button">${member.active ? 'Mettre en pause' : 'Réactiver'}</button><button class="primary-button train-staff" data-staff="${definition.id}" type="button" ${member.level >= 3 ? 'disabled' : ''}>Niveau ${member.level}${member.level < 3 ? ` → ${member.level + 1}` : ' max'}</button></div>` : `<button class="primary-button hire-staff" data-staff="${definition.id}" type="button" ${available && state().coins >= definition.cost ? '' : 'disabled'}>${available ? `Recruter · ${C.fmt(definition.cost)} 🪙` : `${definition.rep} réputation requise`}</button>`}</div>
+        ${member ? `<div class="staff-actions"><button class="secondary-button toggle-staff" data-staff="${definition.id}" type="button">${member.active ? 'Mettre en pause' : 'Réactiver'}</button><button class="primary-button train-staff" data-staff="${definition.id}" type="button" ${member.level >= 3 ? 'disabled' : ''}>Niveau ${member.level}${member.level < 3 ? ` → ${member.level + 1}` : ' max'}</button></div>` : `<button class="primary-button hire-staff" data-staff="${definition.id}" type="button" ${state().coins >= definition.cost ? '' : 'disabled'}>Recruter · ${C.fmt(definition.cost)} 🪙</button>`}</div>
       </article>`;
     }).join('');
     grid.querySelectorAll('.hire-staff').forEach(button => button.addEventListener('click', () => hireStaff(button.dataset.staff)));
@@ -846,7 +906,7 @@
   function buyTechnology(id) {
     const tech = TECHNOLOGIES.find(item => item.id === id);
     if (!tech || hasTech(id)) return;
-    if (state().reputation < tech.rep || (tech.requires && !hasTech(tech.requires))) return;
+    if (tech.requires && !hasTech(tech.requires)) return;
     if (!C.canPay(tech.coins, tech.materials)) return C.toast('Il manque des ressources pour cette technologie.');
     C.pay(tech.coins, tech.materials);
     exp().tech.push(id);
@@ -859,9 +919,9 @@
     grid.innerHTML = TECHNOLOGIES.map(tech => {
       const bought = hasTech(tech.id);
       const prerequisite = !tech.requires || hasTech(tech.requires);
-      const available = state().reputation >= tech.rep && prerequisite;
+      const available = prerequisite;
       let label = bought ? 'Installée' : 'Construire';
-      if (!available) label = !prerequisite ? `Nécessite ${TECHNOLOGIES.find(item => item.id === tech.requires)?.name}` : `${tech.rep} réputation requise`;
+      if (!available) label = `Nécessite ${TECHNOLOGIES.find(item => item.id === tech.requires)?.name}`;
       return `<article class="tech-card ${available || bought ? '' : 'locked'}"><div class="tech-line"></div>${C.pixelImg(tech.asset, tech.name, 'pixel-card-icon')}<h3>${tech.name}</h3><p>${tech.desc}</p><div class="cost-row"><span class="resource-chip">🪙 ${C.fmt(tech.coins)}</span>${C.materialChips(tech.materials)}</div><button class="${bought ? 'secondary-button' : 'primary-button'} buy-tech" data-tech="${tech.id}" type="button" ${available && !bought && C.canPay(tech.coins, tech.materials) ? '' : 'disabled'}>${label}</button></article>`;
     }).join('');
     grid.querySelectorAll('.buy-tech').forEach(button => button.addEventListener('click', () => buyTechnology(button.dataset.tech)));
@@ -869,7 +929,7 @@
 
   function unlockEstablishment(id) {
     const place = ESTABLISHMENTS.find(item => item.id === id);
-    if (!place || exp().establishments.includes(id) || state().reputation < place.rep) return;
+    if (!place || exp().establishments.includes(id)) return;
     if (!C.canPay(place.coins, place.materials)) return C.toast('Il manque des ressources pour ouvrir cet établissement.');
     C.pay(place.coins, place.materials);
     exp().establishments.push(id);
@@ -900,8 +960,8 @@
     }).join('');
     if (establishmentGrid) establishmentGrid.innerHTML = ESTABLISHMENTS.map(place => {
       const opened = exp().establishments.includes(place.id);
-      const available = state().reputation >= place.rep;
-      return `<article class="establishment-card ${available || opened ? '' : 'locked'}"><img src="${C.assetPath(place.asset)}" alt="${place.name}"><div><h3>${place.name}</h3><p>${place.desc}</p><small>Revenu actif : ${place.income} 🪙 par passage</small><div class="cost-row"><span class="resource-chip">🪙 ${C.fmt(place.coins)}</span>${C.materialChips(place.materials)}</div><button class="primary-button unlock-establishment" data-establishment="${place.id}" type="button" ${available && !opened && C.canPay(place.coins, place.materials) ? '' : 'disabled'}>${opened ? 'Ouvert' : available ? 'Ouvrir' : `${place.rep} réputation requise`}</button></div></article>`;
+      const available = true;
+      return `<article class="establishment-card ${opened ? '' : ''}"><img src="${C.assetPath(place.asset)}" alt="${place.name}"><div><h3>${place.name}</h3><p>${place.desc}</p><small>Revenu actif : ${place.income} 🪙 par passage</small><div class="cost-row"><span class="resource-chip">🪙 ${C.fmt(place.coins)}</span>${C.materialChips(place.materials)}</div><button class="primary-button unlock-establishment" data-establishment="${place.id}" type="button" ${!opened && C.canPay(place.coins, place.materials) ? '' : 'disabled'}>${opened ? 'Ouvert' : 'Ouvrir'}</button></div></article>`;
     }).join('');
     establishmentGrid?.querySelectorAll('.unlock-establishment').forEach(button => button.addEventListener('click', () => unlockEstablishment(button.dataset.establishment)));
     if (stats) {
@@ -919,10 +979,38 @@
     target.innerHTML = `<div class="domain-overview"><span><b>${exp().machines.length}/${Object.keys(MACHINE_DEFS).length}</b><small>machines installées</small></span><span><b>${exp().crafting.filter(job => job.ready).length}</b><small>objets à récupérer</small></span><span><b>${exp().tech.length}</b><small>technologies</small></span><span><b>${exp().establishments.length}</b><small>débouchés de vente</small></span></div><div class="domain-resources">${important.map(key => `<span class="resource-chip">${C.itemImg(key)} ${C.ITEMS[key].name} : <b>${state().inventory[key] || 0}</b></span>`).join('')}</div>`;
   }
 
+  const STAFF_PRESENCE = {
+    server: { room: 'service', x: 72, y: 63, text: 'Je surveille les commandes' },
+    cook: { room: 'service', x: 57, y: 45, text: 'Je lance une préparation' },
+    courier: { room: 'service', x: 82, y: 74, text: 'Livraison arrivée' },
+    artisan: { room: 'machine', x: 24, y: 72, text: 'Je règle les outils' },
+    technician: { room: 'machine', x: 76, y: 69, text: 'Maintenance en cours' },
+    gardener: { room: 'farm', x: 16, y: 72, text: 'Je m’occupe des cultures' }
+  };
+
+  function renderVisibleStaff() {
+    const targets = { service: C.el('serviceStaffLayer'), machine: C.el('machineStaffLayer'), farm: C.el('farmStaffLayer') };
+    Object.values(targets).forEach(target => { if (target) target.innerHTML = ''; });
+    exp().staff.forEach(member => {
+      const definition = STAFF.find(item => item.id === member.id);
+      const presence = STAFF_PRESENCE[member.id];
+      const target = presence && targets[presence.room];
+      if (!definition || !presence || !target) return;
+      const working = member.active && Date.now() - Number(member.lastActionAt || 0) < 3200;
+      const node = document.createElement('div');
+      node.className = `visible-worker ${working ? 'working' : ''} ${member.active ? '' : 'paused'}`;
+      node.style.left = `${presence.x}%`; node.style.top = `${presence.y}%`;
+      node.innerHTML = `${C.pixelImg(definition.asset, definition.name, 'worker-sprite')}<span><b>${definition.name}</b><small>${member.active ? (working ? (member.actionLabel || presence.text) : definition.role) : 'En pause'}</small></span>`;
+      target.appendChild(node);
+    });
+  }
+
   function runEmployee(member, definition, now) {
     const interval = definition.interval ? definition.interval / (1 + (member.level - 1) * .25) : 0;
     if (!member.active || !interval || now - member.lastRun < interval) return false;
     member.lastRun = now;
+    member.lastActionAt = now;
+    member.actionLabel = STAFF_PRESENCE[member.id]?.text || 'Au travail';
     if (member.id === 'server') {
       C.pullReadyCookingToTray(false);
       const customer = state().customers.find(item => item.status !== 'leaving' && state().tray.includes(item.recipeId));
@@ -1086,6 +1174,7 @@
     renderMenuPlanner();
     renderFarmExtras();
     renderStaff();
+    renderVisibleStaff();
     renderGathering();
     renderTechnologies();
     renderProgress();
